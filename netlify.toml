@@ -1,0 +1,43 @@
+# Build & deploy config for Netlify.
+# Without this file Netlify publishes the repo root, so /assets/*.js doesn't
+# exist in the served directory and the browser receives an octet-stream
+# fallback instead of the real JS module.
+
+[build]
+  command  = "pnpm build"
+  publish  = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+  # Let corepack pick up the pnpm version from packageManager / pnpm-lock.yaml
+  NPM_FLAGS    = "--version"
+
+# SPA fallback: any unknown route → index.html (status 200 = rewrite, not redirect).
+# Real files in /dist/assets/* are served first; this only triggers when no
+# file matches.
+[[redirects]]
+  from   = "/*"
+  to     = "/index.html"
+  status = 200
+
+# Long-cache hashed assets emitted by Vite (filenames already include a hash).
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Explicit MIME types — defensive, in case Netlify's defaults regress.
+[[headers]]
+  for = "/*.js"
+  [headers.values]
+    Content-Type = "application/javascript; charset=utf-8"
+
+[[headers]]
+  for = "/*.mjs"
+  [headers.values]
+    Content-Type = "application/javascript; charset=utf-8"
+
+[[headers]]
+  for = "/*.css"
+  [headers.values]
+    Content-Type = "text/css; charset=utf-8"
