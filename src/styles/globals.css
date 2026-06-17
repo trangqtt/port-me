@@ -1,0 +1,203 @@
+@import "tailwindcss";
+
+/* ---------- Helvetica Neue (display) -------------------------------------
+ * Self-hosted from /public/fonts/HelveticaNeue/. No italic files provided —
+ * the browser synthesises oblique if `font-style: italic` is requested.
+ * ------------------------------------------------------------------------ */
+
+@font-face {
+    font-family: "Helvetica Neue";
+    font-style: normal;
+    font-weight: 100;
+    font-display: swap;
+    src: url("/fonts/HelveticaNeue/HelveticaNeueUltraLight.otf") format("opentype");
+}
+@font-face {
+    font-family: "Helvetica Neue";
+    font-style: normal;
+    font-weight: 200;
+    font-display: swap;
+    src: url("/fonts/HelveticaNeue/HelveticaNeueThin.otf") format("opentype");
+}
+@font-face {
+    font-family: "Helvetica Neue";
+    font-style: normal;
+    font-weight: 300;
+    font-display: swap;
+    src: url("/fonts/HelveticaNeue/HelveticaNeueLight.otf") format("opentype");
+}
+@font-face {
+    font-family: "Helvetica Neue";
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("/fonts/HelveticaNeue/HelveticaNeueRoman.otf") format("opentype");
+}
+@font-face {
+    font-family: "Helvetica Neue";
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url("/fonts/HelveticaNeue/HelveticaNeueMedium.otf") format("opentype");
+}
+@font-face {
+    font-family: "Helvetica Neue";
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url("/fonts/HelveticaNeue/HelveticaNeueBold.otf") format("opentype");
+}
+@font-face {
+    font-family: "Helvetica Neue";
+    font-style: normal;
+    font-weight: 800;
+    font-display: swap;
+    src: url("/fonts/HelveticaNeue/HelveticaNeueHeavy.otf") format("opentype");
+}
+@font-face {
+    font-family: "Helvetica Neue";
+    font-style: normal;
+    font-weight: 900;
+    font-display: swap;
+    src: url("/fonts/HelveticaNeue/HelveticaNeueBlack.otf") format("opentype");
+}
+
+/* ---------- Neue Montreal (accent) ---------------------------------------
+ * Self-hosted from /public/fonts/NeueMontreal/. 4 weights × normal + italic.
+ * ------------------------------------------------------------------------ */
+
+@font-face {
+    font-family: "Neue Montreal";
+    font-style: normal;
+    font-weight: 300;
+    font-display: swap;
+    src: url("/fonts/NeueMontreal/NeueMontreal-Light.otf") format("opentype");
+}
+@font-face {
+    font-family: "Neue Montreal";
+    font-style: italic;
+    font-weight: 300;
+    font-display: swap;
+    src: url("/fonts/NeueMontreal/NeueMontreal-LightItalic.otf") format("opentype");
+}
+@font-face {
+    font-family: "Neue Montreal";
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("/fonts/NeueMontreal/NeueMontreal-Regular.otf") format("opentype");
+}
+@font-face {
+    font-family: "Neue Montreal";
+    font-style: italic;
+    font-weight: 400;
+    font-display: swap;
+    src: url("/fonts/NeueMontreal/NeueMontreal-Italic.otf") format("opentype");
+}
+@font-face {
+    font-family: "Neue Montreal";
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url("/fonts/NeueMontreal/NeueMontreal-Medium.otf") format("opentype");
+}
+@font-face {
+    font-family: "Neue Montreal";
+    font-style: italic;
+    font-weight: 500;
+    font-display: swap;
+    src: url("/fonts/NeueMontreal/NeueMontreal-MediumItalic.otf") format("opentype");
+}
+@font-face {
+    font-family: "Neue Montreal";
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url("/fonts/NeueMontreal/NeueMontreal-Bold.otf") format("opentype");
+}
+@font-face {
+    font-family: "Neue Montreal";
+    font-style: italic;
+    font-weight: 700;
+    font-display: swap;
+    src: url("/fonts/NeueMontreal/NeueMontreal-BoldItalic.otf") format("opentype");
+}
+
+/* ---------- Design tokens (Tailwind v4 @theme) ---------------------------- */
+
+@theme {
+    /* Colors — names match aesthetics.instructions.md literally */
+    --color-primary: #ffffff; /* text-primary       */
+    --color-secondary: #000000; /* text-secondary     */
+    --color-accent: #ff3b0e; /* text-accent / border-accent (bright highlight) */
+    --color-bg-primary: #0e0803; /* powers .bg-primary override below   */
+    --color-bg-secondary: #d23030; /* powers .bg-secondary override below */
+    --color-line: rgba(255, 255, 255, 0.14);
+
+    /* Typography */
+    --font-display: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --font-accent: "Neue Montreal", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --font-sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+@layer base {
+    html {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        background: var(--color-bg-primary);
+        color: var(--color-primary);
+    }
+
+    body {
+        font-family: var(--font-display);
+        min-height: 100dvh;
+        background:
+            radial-gradient(ellipse 80% 50% at 20% 0%, rgba(255, 59, 14, 0.08), transparent 60%),
+            var(--color-bg-primary);
+    }
+
+    ::selection {
+        background: var(--color-accent);
+        color: var(--color-primary);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+            scroll-behavior: auto !important;
+        }
+    }
+}
+
+@layer utilities {
+    .font-display {
+        font-family: var(--font-display);
+    }
+    .font-accent {
+        font-family: var(--font-accent);
+    }
+    .text-balance {
+        text-wrap: balance;
+    }
+    .text-pretty {
+        text-wrap: pretty;
+    }
+
+    /* Per aesthetics.instructions.md:
+   *   bg-primary   = main background  (#0e0803, dark)
+   *   bg-secondary = background accent (#d23030, deep red)
+   * Without these overrides, Tailwind v4 would auto-derive bg-primary from
+   * --color-primary (#fff) and bg-secondary from --color-secondary (#000),
+   * which is the opposite of the spec. text-primary / text-secondary keep
+   * their #fff / #000 values unchanged. */
+    .bg-primary {
+        background-color: var(--color-bg-primary);
+    }
+    .bg-secondary {
+        background-color: var(--color-bg-secondary);
+    }
+}
