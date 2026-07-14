@@ -1,69 +1,8 @@
 @import "tailwindcss";
 
-/* ---------- Helvetica Neue (display) -------------------------------------
- * Self-hosted from /public/fonts/HelveticaNeue/. No italic files provided —
+/* ---------- Neue Montreal (display) -------------------------------------
+ * Self-hosted from /public/fonts/NeueMontreal/. No italic files provided —
  * the browser synthesises oblique if `font-style: italic` is requested.
- * ------------------------------------------------------------------------ */
-
-@font-face {
-    font-family: "Helvetica Neue";
-    font-style: normal;
-    font-weight: 100;
-    font-display: swap;
-    src: url("/fonts/HelveticaNeue/HelveticaNeueUltraLight.otf") format("opentype");
-}
-@font-face {
-    font-family: "Helvetica Neue";
-    font-style: normal;
-    font-weight: 200;
-    font-display: swap;
-    src: url("/fonts/HelveticaNeue/HelveticaNeueThin.otf") format("opentype");
-}
-@font-face {
-    font-family: "Helvetica Neue";
-    font-style: normal;
-    font-weight: 300;
-    font-display: swap;
-    src: url("/fonts/HelveticaNeue/HelveticaNeueLight.otf") format("opentype");
-}
-@font-face {
-    font-family: "Helvetica Neue";
-    font-style: normal;
-    font-weight: 400;
-    font-display: swap;
-    src: url("/fonts/HelveticaNeue/HelveticaNeueRoman.otf") format("opentype");
-}
-@font-face {
-    font-family: "Helvetica Neue";
-    font-style: normal;
-    font-weight: 500;
-    font-display: swap;
-    src: url("/fonts/HelveticaNeue/HelveticaNeueMedium.otf") format("opentype");
-}
-@font-face {
-    font-family: "Helvetica Neue";
-    font-style: normal;
-    font-weight: 700;
-    font-display: swap;
-    src: url("/fonts/HelveticaNeue/HelveticaNeueBold.otf") format("opentype");
-}
-@font-face {
-    font-family: "Helvetica Neue";
-    font-style: normal;
-    font-weight: 800;
-    font-display: swap;
-    src: url("/fonts/HelveticaNeue/HelveticaNeueHeavy.otf") format("opentype");
-}
-@font-face {
-    font-family: "Helvetica Neue";
-    font-style: normal;
-    font-weight: 900;
-    font-display: swap;
-    src: url("/fonts/HelveticaNeue/HelveticaNeueBlack.otf") format("opentype");
-}
-
-/* ---------- Neue Montreal (accent) ---------------------------------------
- * Self-hosted from /public/fonts/NeueMontreal/. 4 weights × normal + italic.
  * ------------------------------------------------------------------------ */
 
 @font-face {
@@ -123,6 +62,39 @@
     src: url("/fonts/NeueMontreal/NeueMontreal-BoldItalic.otf") format("opentype");
 }
 
+/* ---------- Space Mono (accent) ------------------------------------------
+ * Self-hosted from /public/fonts/SpaceMono/. 2 weights × normal + italic.
+ * ------------------------------------------------------------------------ */
+
+@font-face {
+    font-family: "Space Mono";
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("/fonts/SpaceMono/SpaceMono-Regular.ttf") format("truetype");
+}
+@font-face {
+    font-family: "Space Mono";
+    font-style: italic;
+    font-weight: 400;
+    font-display: swap;
+    src: url("/fonts/SpaceMono/SpaceMono-Italic.ttf") format("truetype");
+}
+@font-face {
+    font-family: "Space Mono";
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url("/fonts/SpaceMono/SpaceMono-Bold.ttf") format("truetype");
+}
+@font-face {
+    font-family: "Space Mono";
+    font-style: italic;
+    font-weight: 700;
+    font-display: swap;
+    src: url("/fonts/SpaceMono/SpaceMono-BoldItalic.ttf") format("truetype");
+}
+
 /* ---------- Design tokens (Tailwind v4 @theme) ---------------------------- */
 
 @theme {
@@ -135,9 +107,8 @@
     --color-line: rgba(255, 255, 255, 0.14);
 
     /* Typography */
-    --font-display: "Helvetica Neue", Helvetica, Arial, sans-serif;
-    --font-accent: "Neue Montreal", "Helvetica Neue", Helvetica, Arial, sans-serif;
-    --font-sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --font-display: "Neue Montreal", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --font-accent: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 @layer base {
@@ -151,9 +122,6 @@
     body {
         font-family: var(--font-display);
         min-height: 100dvh;
-        background:
-            radial-gradient(ellipse 80% 50% at 20% 0%, rgba(255, 59, 14, 0.08), transparent 60%),
-            var(--color-bg-primary);
     }
 
     ::selection {

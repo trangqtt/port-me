@@ -43,4 +43,4 @@ Tests mirror this structure under `tests/` (e.g. `tests/components/sections/Hero
 - **Components**: Function components, named export, PascalCase. Props typed via `interface ComponentNameProps`.
 - **Styling**: Tailwind utility classes. Use `clsx` + `tailwind-merge` for conditional classes. Theme tokens (colors, fonts) live as CSS variables in `globals.css`.
 - **Data**: Static content in `src/data/*.ts`, exported as typed const. Components import data; never hard-code copy in JSX.
-- **Imports**: Always use `@/` alias (e.g. `import { Hero } from "@/components/sections/Hero"`). Never `@/src/...` — `@` already points into `src/`.
+- **Imports**: not use `@/` alias (e.g. `import { Hero } from "@/components/sections/Hero"`). Never `@/src/...` — `@` already points into `src/`.
