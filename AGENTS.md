@@ -18,15 +18,16 @@ pnpm test --run   # Single-pass test run (use in CI / after edits)
 pnpm lint         # ESLint
 ```
 
-Always run `pnpm test --run` after editing components or hooks.
+<!-- Always run `pnpm test --run` after editing components or hooks. -->
 
 ## Source layout
 
 ```
 src/
 ├── components/
-│   ├── layout/      # Layout, NavBar, Footer
+│   ├── common/      # Layout, NavBar, Footer
 │   ├── sections/    # Hero, About, Projects, Contact (one per landing section)
+│   ├── Icon/        # Customable Icon SVG
 │   └── ui/          # Reusable primitives (ProjectCard, SkillBadge, SocialLink)
 ├── data/            # Typed content objects (profile, projects, skills)
 ├── hooks/           # Custom hooks (useTypewriter, useScrollReveal)
