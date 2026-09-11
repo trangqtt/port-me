@@ -154,14 +154,6 @@
     .text-pretty {
         text-wrap: pretty;
     }
-
-    /* Per aesthetics.instructions.md:
-   *   bg-primary   = main background  (#0e0803, dark)
-   *   bg-secondary = background accent (#d23030, deep red)
-   * Without these overrides, Tailwind v4 would auto-derive bg-primary from
-   * --color-primary (#fff) and bg-secondary from --color-secondary (#000),
-   * which is the opposite of the spec. text-primary / text-secondary keep
-   * their #fff / #000 values unchanged. */
     .bg-primary {
         background-color: var(--color-bg-primary);
     }

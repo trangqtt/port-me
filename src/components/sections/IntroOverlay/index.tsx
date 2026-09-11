@@ -3,6 +3,7 @@ import { gsap } from "gsap";
 import { useRef, useState } from "react";
 import { useImageCycleRandom } from "../../../hooks/useImageCycleRandom";
 import { useIsMobile } from "../../../hooks/useIsMobile";
+import { PixelMask, pixelsSortedOutIn } from "./PixelMask";
 
 gsap.registerPlugin(useGSAP);
 
@@ -31,6 +32,7 @@ export function IntroOverlay() {
   const headingStartRef = useRef<HTMLSpanElement>(null);
   const headingEndRef = useRef<HTMLSpanElement>(null);
   const roleLabelRef = useRef<HTMLParagraphElement>(null);
+  const pixelMaskRef = useRef<HTMLDivElement>(null);
   const { addImageCycleRandomSequence, cycleImages, imageCycleRef } =
     useImageCycleRandom(DEFAULT_IMAGES);
   const isMobile = useIsMobile();
@@ -146,14 +148,24 @@ export function IntroOverlay() {
           },
           ">",
         )
+        .add(() => {
+          const mask = pixelMaskRef.current;
+          if (mask) mask.style.visibility = "visible";
+        }, ">+=0.6")
+        .to(
+          pixelsSortedOutIn(pixelMaskRef.current),
+          {
+            autoAlpha: 1,
+            duration: 0.05,
+            ease: "power2.out",
+            stagger: { each: 0.0001 },
+          },
+          "<",
+        )
         .to(
           root,
-          {
-            yPercent: -100,
-            duration: 1,
-            ease: "expo.inOut",
-          },
-          ">+=0.8",
+          { autoAlpha: 0, duration: 0.6, ease: "power2.out" },
+          ">+=0.15",
         );
 
       return () => timeline.kill();
@@ -255,6 +267,8 @@ export function IntroOverlay() {
           [UIUX DESIGN]
         </p>
       </div>
+
+      <PixelMask ref={pixelMaskRef} />
     </div>
   );
 }

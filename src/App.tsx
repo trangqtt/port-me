@@ -1,6 +1,6 @@
 import { ReactLenis } from "lenis/react";
 import { IntroOverlay } from "./components/sections/IntroOverlay";
-// import { NavBar } from "./components/common/NavBar";
+import { Header } from "./components/common/Header";
 
 export default function App() {
   return (
@@ -16,9 +16,9 @@ export default function App() {
           anchors: true,
         }}
       >
-        {/* <NavBar /> */}
+        <Header />
         <main className="flex min-h-dvh flex-col items-start justify-center gap-12 px-10 py-20 md:px-20">
-          <IntroOverlay />{" "}
+          {/* <IntroOverlay /> */}
         </main>
       </ReactLenis>
     </>

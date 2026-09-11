@@ -16,8 +16,6 @@ export function LoadingPathLoop({
 }: LoadingPathLoopProps) {
   const svgRef = useRef<SVGSVGElement>(null);
 
-  console.log(repeat);
-
   useGSAP(
     () => {
       const STEP = 0.07;
