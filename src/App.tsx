@@ -1,11 +1,12 @@
 import { ReactLenis } from "lenis/react";
+import { Footer } from "./components/common/Footer";
 import { Header } from "./components/common/Header";
 import { About } from "./components/sections/About";
 import { Home } from "./components/sections/Home";
 import { useLenisSnap } from "./hooks/useLenisSnap";
 
 function ScrollSnapSection() {
-  useLenisSnap("main > section");
+  useLenisSnap("main > section, footer");
   return null;
 }
 
@@ -29,8 +30,7 @@ export default function App() {
         {/* <IntroOverlay /> */}
         <Home />
         <About />
-        <Home />
-        <Home />
+        <Footer />
       </main>
       <ScrollSnapSection />
     </ReactLenis>

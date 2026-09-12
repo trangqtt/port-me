@@ -58,7 +58,7 @@ export function ExperienceSlider({ items }: ExperienceSliderProps) {
       </p>
 
       {/* Mobile Sticky Card Stack */}
-      <ul className="relative flex flex-col h-275 mb-25 lg:hidden">
+      <ul className="relative flex flex-col h-275 mb-45 lg:hidden">
         {items.map((item, index) => (
           <li
             key={`${item.company}-${index}`}

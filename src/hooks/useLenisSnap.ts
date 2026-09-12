@@ -7,9 +7,6 @@ interface UseLenisSnapOptions {
   duration?: number;
 }
 
-// Matches Tailwind's `lg` breakpoint — snap only makes sense on desktop here.
-const DESKTOP_QUERY = "(min-width: 1024px)";
-
 /** Snaps scroll to each matched element (e.g. every top-level `<section>`) using Lenis's own snap module and easing. Desktop only. */
 export function useLenisSnap(
   selector: string,
@@ -20,7 +17,7 @@ export function useLenisSnap(
   useEffect(() => {
     if (!lenis) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    if (!window.matchMedia(DESKTOP_QUERY).matches) return;
+    if (!window.matchMedia("(min-width: 1024px)").matches) return;
 
     const snap = new Snap(lenis, {
       type,
