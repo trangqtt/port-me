@@ -160,7 +160,7 @@ export const MobileNav = ({ children, className, visible }: MobileNavProps) => {
         damping: 50,
       }}
       className={cn(
-        "relative z-50 flex w-screen flex-row items-center justify-between bg-transparent px-4 lg:px-8 xl:px-20",
+        "relative z-20 flex w-screen flex-row items-center justify-between bg-transparent px-4 lg:px-8 xl:px-20",
         visible && "bg-white/80 dark:bg-neutral-950/80 ",
         className,
       )}

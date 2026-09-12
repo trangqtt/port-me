@@ -1,17 +1,19 @@
 "use client";
 import { useState } from "react";
-import { navItems } from "../../../data/navigation";
-import { profile } from "../../../data/profile";
+import { navItems } from "../../data/navigation";
+import { profile } from "../../data/profile";
 import {
   MobileNav,
   MobileNavToggle,
   Navbar,
   NavbarLogo,
   NavMenu,
-} from "../../ui/resizable-navbar";
+} from "../ui/resizable-navbar";
+import { ScrambleLink } from "../ui/ScrambleLink";
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
   const close = () => setIsMenuOpen(false);
   const toggle = () => setIsMenuOpen((v) => !v);
 
@@ -111,14 +113,13 @@ export function Header() {
               <ul className="mt-2 flex flex-wrap gap-x-5">
                 {profile.socials.map((social) => (
                   <li key={social.label}>
-                    <a
+                    <ScrambleLink
+                      text={social.label}
                       href={social.href}
                       target="_blank"
                       rel="noreferrer noopener"
                       className="font-display text-base font-medium text-primary transition-colors hover:text-accent"
-                    >
-                      {social.label}
-                    </a>
+                    />
                   </li>
                 ))}
               </ul>
@@ -143,3 +144,5 @@ export function Header() {
     </header>
   );
 }
+
+
