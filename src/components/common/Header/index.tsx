@@ -4,7 +4,6 @@ import { navItems } from "../../../data/navigation";
 import { profile } from "../../../data/profile";
 import {
   MobileNav,
-  MobileNavHeader,
   MobileNavToggle,
   Navbar,
   NavbarLogo,
@@ -19,10 +18,10 @@ export function Header() {
   return (
     <header className="relative w-full">
       <Navbar>
-        <div className="relative hidden h-23 w-full py-4 px-[4vw] lg:py-6 lg:flex">
-          <NavbarLogo className="absolute left-[4.48vw] top-6" />
+        <MobileNav className="relative h-23 w-full py-4 lg:py-6 flex">
+          <NavbarLogo className="" />
 
-          <div className="absolute left-[27.5%] top-5.5 flex flex-col font-accent text-sm xl:text-base uppercase leading-[1.2] text-primary/70">
+          <div className="absolute left-[27.5%] top-5.5 lg:flex flex-col font-accent text-sm xl:text-base uppercase leading-[1.2] text-primary/70 hidden">
             <a
               href={`mailto:${profile.email}`}
               className="transition-colors hover:text-accent"
@@ -37,7 +36,7 @@ export function Header() {
             </a>
           </div>
 
-          <span className="absolute left-1/2 top-5.5 flex items-center gap-1 font-accent text-sm xl:text-base uppercase leading-[1.2] text-primary/70">
+          <span className="absolute left-1/2 top-5.5 lg:flex items-center gap-1 font-accent text-sm xl:text-base uppercase leading-[1.2] text-primary/70 hidden">
             <span
               aria-hidden="true"
               className="h-2 w-2 rounded-full bg-[#38A86A]"
@@ -45,30 +44,18 @@ export function Header() {
             {profile.status}
           </span>
 
-          <div className="absolute right-[4.48vw] top-6 flex h-11 items-stretch gap-2">
+          <div className="flex h-11 items-stretch gap-2">
             <MobileNavToggle isOpen={isMenuOpen} onClick={toggle} />
             <a
               href={`mailto:${profile.email}`}
-              className="flex h-11 w-37.5 items-center justify-center bg-secondary px-4 font-accent text-base uppercase leading-[1.2] text-primary transition-colors hover:bg-accent"
+              className="lg:flex h-11 w-37.5 items-center justify-center bg-secondary px-4 font-accent text-base uppercase leading-[1.2] text-primary transition-colors hover:bg-accent hidden"
             >
               Get in touch
             </a>
           </div>
-        </div>
-
-        <MobileNav className="flex lg:hidden">
-          <MobileNavHeader className="py-4">
-            <NavbarLogo />
-            <MobileNavToggle isOpen={isMenuOpen} onClick={toggle} />
-          </MobileNavHeader>
         </MobileNav>
 
-        {/* Shared across breakpoints — the desktop bar's MENU button and the
-            mobile toggle both open this same menu instance. */}
         <NavMenu isOpen={isMenuOpen} onClose={close}>
-          {/* Header inside the curtain — logo left, close chip right.
-              Uses the exact same chip styling as the MENU toggle so the two
-              surfaces feel like one continuous element. */}
           <div className="flex w-full items-center justify-between">
             <NavbarLogo isOpen={isMenuOpen} />
             <MobileNavToggle isOpen onClick={close} />
@@ -94,8 +81,6 @@ export function Header() {
             ))}
           </ul>
 
-          {/* Contact block. Space Mono micro-labels sit above display-font
-              values — the type-contrast language used across the site. */}
           <div className="mt-auto grid w-full grid-cols-2 gap-8 pt-8 pb-8">
             <div>
               <p className="font-accent text-sm uppercase text-primary/50">

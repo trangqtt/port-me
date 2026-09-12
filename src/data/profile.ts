@@ -5,6 +5,7 @@ export interface SocialLink {
 
 export const profile = {
   name: "MaiHoa",
+  role: "UI UX Designer",
   email: "Hoant0510@gmail.com",
   phone: "+84 829 366 310",
   status: "Available",
