@@ -2,6 +2,7 @@ import { ReactLenis } from "lenis/react";
 import { Footer } from "./components/common/Footer";
 import { Header } from "./components/common/Header";
 import { About } from "./components/sections/About";
+import { Expertise } from "./components/sections/Expertise";
 import { Home } from "./components/sections/Home";
 import { Skills } from "./components/sections/Skills";
 import { useLenisSnap } from "./hooks/useLenisSnap";
@@ -32,6 +33,7 @@ export default function App() {
         <Home />
         <About />
         <Skills />
+        <Expertise />
         <Footer />
       </main>
       <ScrollSnapSection />

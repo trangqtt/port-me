@@ -128,7 +128,7 @@ export function Skills() {
     <section
       id="skills"
       aria-labelledby="skills-title"
-      className="relative min-h-dvh w-full overflow-hidden bg-primary px-5 py-16 sm:px-8 lg:px-[4.48vw] lg:pb-20 lg:pt-[17vh]"
+      className="relative min-h-dvh w-full overflow-hidden bg-primary px-5 py-16 lg:py-22 sm:px-8 lg:px-[4.48vw] lg:pb-20 2xl:pt-[17vh]"
     >
       <header className="flex flex-col gap-1 lg:grid lg:grid-cols-4 lg:items-end">
         <p className="font-accent text-sm uppercase leading-[1.2] text-primary/50 lg:text-base">
@@ -136,13 +136,13 @@ export function Skills() {
         </p>
         <h2
           id="skills-title"
-          className="font-display text-[26px] font-medium leading-[1.2] text-primary lg:col-span-2 lg:pl-12 lg:text-[52px] lg:font-normal lg:leading-none"
+          className="font-display text-[26px] lg:text-5xl font-medium leading-[1.2] text-primary lg:col-span-2 lg:pl-12 2xl:text-[52px] lg:font-normal lg:leading-none"
         >
           Skills
         </h2>
       </header>
 
-      <div ref={containerRef} className="relative mt-4 lg:mt-17">
+      <div ref={containerRef} className="relative mt-4 md:mt-6 2xl:mt-17">
         <ul className="relative z-10">
           {skills.map((skill, index) => {
             const isActive = index === activeIndex;
@@ -159,7 +159,7 @@ export function Skills() {
                   onPointerLeave={() => leavePreview(index)}
                   onBlur={() => leavePreview(index)}
                   className={cn(
-                    "grid min-h-23 w-full grid-cols-[minmax(0,1fr)_60px] items-center gap-4 border-b border-line py-4 text-left font-accent uppercase transition-colors duration-300 focus-visible:-outline-offset-2 focus-visible:outline-2 focus-visible:outline-accent lg:min-h-16 lg:grid-cols-[6.6rem_minmax(12rem,1fr)_7rem_minmax(20rem,1fr)] lg:gap-0 lg:px-0 lg:py-6 lg:text-base",
+                    "grid min-h-23 w-full grid-cols-[minmax(0,1fr)_60px] items-center gap-4 border-b border-line py-4 text-left font-accent uppercase transition-colors duration-300 focus-visible:-outline-offset-2 focus-visible:outline-2 focus-visible:outline-accent lg:min-h-16 lg:grid-cols-[6.6rem_minmax(12rem,1fr)_7rem_minmax(20rem,1fr)] lg:gap-0 lg:px-0 2xl:py-6 lg:text-base",
                     isActive
                       ? "lg:bg-white lg:text-[#0d0d0d] lg:px-2"
                       : "text-primary",
