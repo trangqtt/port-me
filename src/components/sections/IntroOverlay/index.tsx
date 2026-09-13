@@ -31,8 +31,8 @@ export function IntroOverlay() {
   const rootRef = useRef<HTMLDivElement>(null);
   const imageBoxRef = useRef<HTMLSpanElement>(null);
   const growingImageRef = useRef<HTMLSpanElement>(null);
-  const headingStartRef = useRef<HTMLSpanElement>(null);
-  const headingEndRef = useRef<HTMLSpanElement>(null);
+  const introStartRef = useRef<HTMLSpanElement>(null);
+  const introEndRef = useRef<HTMLSpanElement>(null);
   const roleLabelRef = useRef<HTMLParagraphElement>(null);
   const pixelMaskRef = useRef<HTMLDivElement>(null);
   const { addImageCycleRandomSequence, cycleImages, imageCycleRef } =
@@ -96,17 +96,17 @@ export function IntroOverlay() {
       if (isMobile) {
         timeline
           .set(imageBoxRef.current, { display: "none" })
-          .set(headingStartRef.current, { display: "none" })
-          .set(headingEndRef.current, { display: "none" })
+          .set(introStartRef.current, { display: "none" })
+          .set(introEndRef.current, { display: "none" })
           .set(imageCycleRef.current, { autoAlpha: 0 })
-          .set([headingStartRef.current, headingEndRef.current], {
+          .set([introStartRef.current, introEndRef.current], {
             autoAlpha: 0,
           });
 
         addImageCycleRandomSequence(timeline);
 
         timeline.to(
-          [headingStartRef.current, headingEndRef.current],
+          [introStartRef.current, introEndRef.current],
           { display: "flex", autoAlpha: 1, duration: 0.85 },
           ">",
         );
@@ -140,8 +140,8 @@ export function IntroOverlay() {
             { width: "100%", scale: 1, duration: 1.25 },
             "<",
           )
-          .to(headingStartRef.current, { x: "-0.05em", duration: 1.25 }, "<")
-          .to(headingEndRef.current, { x: "0.05em", duration: 1.25 }, "<")
+          .to(introStartRef.current, { x: "-0.05em", duration: 1.25 }, "<")
+          .to(introEndRef.current, { x: "0.05em", duration: 1.25 }, "<")
           .to(
             extraImages,
             {
@@ -164,7 +164,7 @@ export function IntroOverlay() {
           )
           .to(imageBox, { width: "0em", duration: 0.85 }, "<")
           .to(
-            [headingStartRef.current, headingEndRef.current],
+            [introStartRef.current, introEndRef.current],
             { x: 0, duration: 0.85 },
             "<",
           );
@@ -219,7 +219,7 @@ export function IntroOverlay() {
           className="flex items-center justify-center whitespace-nowrap font-display text-[clamp(64px,16vw,200px)] font-medium leading-none sm:leading-normal"
         >
           <span
-            ref={headingStartRef}
+            ref={introStartRef}
             aria-hidden="true"
             className="flex justify-end overflow-hidden px-[0.12em]"
           >
@@ -285,7 +285,7 @@ export function IntroOverlay() {
           </span>
 
           <span
-            ref={headingEndRef}
+            ref={introEndRef}
             aria-hidden="true"
             className="flex justify-start overflow-hidden px-[0.12em]"
           >
