@@ -1,6 +1,7 @@
 import { useGSAP } from "@gsap/react";
 import { gsap } from "gsap";
-import { useRef, useState } from "react";
+import { useLenis } from "lenis/react";
+import { useEffect, useRef, useState } from "react";
 import { useImageCycleRandom } from "../../../hooks/useImageCycleRandom";
 import { useIsMobile } from "../../../hooks/useIsMobile";
 import { PixelMask, pixelsSortedOutIn } from "./PixelMask";
@@ -26,6 +27,7 @@ const splitWord = (word: string) =>
 
 export function IntroOverlay() {
   const [done, setDone] = useState(false);
+  const lenis = useLenis();
   const rootRef = useRef<HTMLDivElement>(null);
   const imageBoxRef = useRef<HTMLSpanElement>(null);
   const growingImageRef = useRef<HTMLSpanElement>(null);
@@ -37,6 +39,31 @@ export function IntroOverlay() {
     useImageCycleRandom(DEFAULT_IMAGES);
   const isMobile = useIsMobile();
 
+  useEffect(() => {
+    if (done) return;
+
+    const root = document.documentElement;
+    const body = document.body;
+    const previousRootOverflow = root.style.overflow;
+    const previousBodyOverflow = body.style.overflow;
+    const previousOverscrollBehavior = root.style.overscrollBehavior;
+    const previousTouchAction = body.style.touchAction;
+
+    lenis?.stop();
+    root.style.overflow = "hidden";
+    body.style.overflow = "hidden";
+    root.style.overscrollBehavior = "none";
+    body.style.touchAction = "none";
+
+    return () => {
+      root.style.overflow = previousRootOverflow;
+      body.style.overflow = previousBodyOverflow;
+      root.style.overscrollBehavior = previousOverscrollBehavior;
+      body.style.touchAction = previousTouchAction;
+      lenis?.start();
+    };
+  }, [done, lenis]);
+
   useGSAP(
     () => {
       const root = rootRef.current;
@@ -45,14 +72,20 @@ export function IntroOverlay() {
 
       if (!root) return;
 
-      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      const finishIntro = () => {
+        lenis?.scrollTo(0, { immediate: true, force: true });
+        window.scrollTo(0, 0);
         setDone(true);
+      };
+
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        finishIntro();
         return;
       }
 
       const timeline = gsap.timeline({
         defaults: { ease: "expo.inOut" },
-        onComplete: () => setDone(true),
+        onComplete: finishIntro,
       });
 
       timeline.set(roleLabelRef.current, {
@@ -170,7 +203,7 @@ export function IntroOverlay() {
 
       return () => timeline.kill();
     },
-    { scope: rootRef, dependencies: [isMobile] },
+    { scope: rootRef, dependencies: [isMobile, lenis] },
   );
 
   if (done) return null;

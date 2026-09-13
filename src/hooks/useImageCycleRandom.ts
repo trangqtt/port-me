@@ -16,31 +16,46 @@ export function useImageCycleRandom(images: readonly string[]) {
     [images],
   );
 
-  const addImageCycleRandomSequence = (timeline: gsap.core.Timeline) => {
-    const container = imageCycleRef.current;
-    const cards = container?.querySelectorAll<HTMLElement>(
-      "[data-image-cycle-card]",
-    );
-    if (!container || !cards?.length) return;
+ const addImageCycleRandomSequence = (timeline: gsap.core.Timeline) => {
+   const cards = imageCycleRef.current?.querySelectorAll<HTMLElement>(
+     "[data-image-cycle-card]",
+   );
+   if (!cards?.length) return;
 
-    Array.from(cards).forEach((card, index) => {
-      const offset = cardOffsets[index] ?? { x: 0, y: 0 };
+   timeline
+     .set(imageCycleRef.current, { autoAlpha: 1, scale: 1 }, "<")
+     .set(cards, { autoAlpha: 0, scale: 0 });
 
-      timeline.fromTo(
-        card,
-        { autoAlpha: 0, scale: 0, x: offset.x, y: offset.y },
-        {
-          autoAlpha: 1,
-          scale: 1,
-          x: offset.x,
-          y: offset.y,
-          duration: 1,
-          ease: "power3.out",
-        },
-        index === 0 ? "<" : `<+=${CYCLE_INTERVAL}`,
-      );
-    });
-  };
+   Array.from(cards).forEach((card, index) => {
+     const offset = cardOffsets[index] ?? { x: 0, y: 0 };
+
+     timeline.fromTo(
+       card,
+       { autoAlpha: 0, scale: 0, x: offset.x, y: offset.y },
+       {
+         autoAlpha: 1,
+         scale: 1,
+         x: offset.x,
+         y: offset.y,
+         duration: 1,
+         ease: "power3.out",
+       },
+       index === 0 ? "<" : `<+=${CYCLE_INTERVAL}`,
+     );
+   });
+
+   timeline.addLabel("imageCycleCollapseStart", `>+=0.2`).to(
+     imageCycleRef.current,
+     {
+       display: "none",
+       autoAlpha: 0,
+       scale: 0,
+       duration: 0.75,
+       ease: "expo.inOut",
+     },
+     "imageCycleCollapseStart",
+   );
+ };
 
   // Duplicates cards forever: each tick clones the next source image, fades
   // it in, and removes the oldest clone once the pool is full.
