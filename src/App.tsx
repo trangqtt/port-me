@@ -3,6 +3,7 @@ import { Footer } from "./components/common/Footer";
 import { Header } from "./components/common/Header";
 import { About } from "./components/sections/About";
 import { Home } from "./components/sections/Home";
+import { Skills } from "./components/sections/Skills";
 import { useLenisSnap } from "./hooks/useLenisSnap";
 
 function ScrollSnapSection() {
@@ -30,6 +31,7 @@ export default function App() {
         {/* <IntroOverlay /> */}
         <Home />
         <About />
+        <Skills />
         <Footer />
       </main>
       <ScrollSnapSection />
