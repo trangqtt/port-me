@@ -5,7 +5,9 @@ import { About } from "./components/sections/About";
 import { Expertise } from "./components/sections/Expertise";
 import { Home } from "./components/sections/Home";
 import { Skills } from "./components/sections/Skills";
+import { WhyChooseMe } from "./components/sections/WhyChooseMe";
 import { useLenisSnap } from "./hooks/useLenisSnap";
+import { IntroOverlay } from "./components/sections/IntroOverlay";
 
 function ScrollSnapSection() {
   useLenisSnap("main > section, footer");
@@ -29,11 +31,12 @@ export default function App() {
       <Header />
 
       <main>
-        {/* <IntroOverlay /> */}
+        <IntroOverlay />
         <Home />
         <About />
         <Skills />
         <Expertise />
+        <WhyChooseMe />
         <Footer />
       </main>
       <ScrollSnapSection />
