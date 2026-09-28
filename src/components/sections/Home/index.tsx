@@ -127,7 +127,7 @@ export function Home() {
       <div
         data-hero-reveal
         aria-hidden="true"
-        className="pointer-events-none absolute left-[-71.8%] right-[-44.5%] top-[38.73%] aspect-[850/540] mix-blend-difference min-[530px]:inset-x-[-10%] min-[530px]:top-[42%] lg:left-[5.47%] lg:right-auto lg:top-[14.17%] lg:aspect-[1528/972] lg:h-auto lg:w-[79.62%]"
+        className="pointer-events-none absolute left-[-71.8%] right-[-44.5%] top-[38.73%] aspect-[850/540] mix-blend-difference min-[530px]:inset-x-[-10%] min-[530px]:top-[42%] tab:left-[5.47%] tab:right-auto tab:top-[14.17%] tab:aspect-[1528/972] tab:h-auto tab:w-[79.62%]"
       >
         {/* The poster is the render's first frame, so the plate is already
             blending correctly before a byte of video has decoded, and it is
@@ -156,7 +156,7 @@ export function Home() {
         data-hero-reveal
         role="img"
         aria-label={`${profile.name} — portrait`}
-        className="absolute left-[4.33%] top-[108px] aspect-[202/221] w-[22.84%] overflow-hidden min-[788px]:w-[180px] lg:left-auto lg:right-[12.43%] lg:top-[49.17%] lg:w-[10.54%]"
+        className="absolute left-[4.33%] top-[108px] aspect-[202/221] w-[22.84%] overflow-hidden min-[788px]:w-[180px] tab:left-auto tab:right-[12.43%] tab:top-[49.17%] tab:w-[10.54%]"
       >
         {/* Only the first frame is mounted; every switch after it is the
             cycle's, spawned by the hook. */}
@@ -177,7 +177,7 @@ export function Home() {
       <p
         data-hero-reveal
         aria-hidden="true"
-        className="absolute right-3 top-[98px] font-accent text-base uppercase leading-[1.2] text-primary/70 lg:left-[4.01%] lg:right-auto lg:top-[26.4%]"
+        className="absolute right-3 top-[98px] font-accent text-base uppercase leading-[1.2] text-primary/70 tab:left-[4.01%] tab:right-auto tab:top-[26.4%]"
       >
         [→]
       </p>
@@ -186,12 +186,12 @@ export function Home() {
           along the bottom on desktop — so the separators only exist there. */}
       <div
         data-hero-reveal
-        className="absolute right-[4.33%] top-[155px] flex flex-col items-end font-accent text-sm uppercase leading-[1.2] text-primary/70 lg:bottom-[17.96%] lg:left-[4.17%] lg:right-auto lg:top-auto lg:flex-row lg:items-center lg:gap-2 lg:text-base"
+        className="absolute right-[4.33%] top-[155px] flex flex-col items-end font-accent text-sm uppercase leading-[1.2] text-primary/70 tab:bottom-[17.96%] tab:left-[4.17%] tab:right-auto tab:top-auto tab:flex-row tab:items-center tab:gap-2 tab:text-base"
       >
         {profile.socials.map((social, index) => (
           <span key={social.label} className="flex items-center gap-2">
             {index > 0 && (
-              <span aria-hidden="true" className="hidden lg:inline">
+              <span aria-hidden="true" className="hidden tab:inline">
                 /
               </span>
             )}
@@ -214,7 +214,7 @@ export function Home() {
           moves that call to action under the paragraph instead. */}
       <div
         data-hero-reveal
-        className="absolute left-4 top-[241px] flex w-[299px] max-w-[calc(100%-2rem)] flex-col gap-2.5 font-accent text-sm uppercase leading-[1.2] min-[530px]:top-[calc(130px+25vw)] min-[788px]:top-[325px] lg:left-auto lg:right-[7.81%] lg:top-[33.8%] lg:max-w-none lg:text-base"
+        className="absolute left-4 top-[241px] flex w-[299px] max-w-[calc(100%-2rem)] flex-col gap-2.5 font-accent text-sm uppercase leading-[1.2] min-[530px]:top-[calc(130px+25vw)] min-[788px]:top-[325px] tab:left-auto tab:right-[7.81%] tab:top-[33.8%] tab:max-w-none tab:text-base"
       >
         <p className="text-primary/70">
           Passionate about creating unforgettable and beautiful digital
@@ -222,7 +222,7 @@ export function Home() {
         </p>
         <a
           href={`mailto:${profile.email}`}
-          className="text-primary transition-colors hover:text-accent lg:hidden"
+          className="text-primary transition-colors hover:text-accent tab:hidden"
         >
           Get in touch
         </a>
@@ -232,7 +232,7 @@ export function Home() {
           says it in the wordmark below instead, so only one is ever mounted. */}
       <div
         data-hero-reveal
-        className="absolute left-[3.7%] top-[33.8%] hidden flex-col font-display text-[4.167vw] leading-none tracking-[-0.02em] lg:flex"
+        className="absolute left-[3.7%] top-[33.8%] hidden flex-col font-display text-[4.167vw] leading-none tracking-[-0.02em] tab:flex"
       >
         <span className="text-primary">@{profile.name}</span>
         <span className="text-primary/70">{profile.role}</span>
@@ -241,7 +241,7 @@ export function Home() {
       <p
         data-hero-reveal
         aria-hidden="true"
-        className="absolute left-[3.91%] top-[67.87%] hidden font-accent text-base uppercase leading-[1.2] text-primary/70 lg:block"
+        className="absolute left-[3.91%] top-[67.87%] hidden font-accent text-base uppercase leading-[1.2] text-primary/70 tab:block"
       >
         2026
       </p>
@@ -249,14 +249,14 @@ export function Home() {
       <p
         data-hero-reveal
         aria-hidden="true"
-        className="absolute bottom-[17.96%] left-[56.62%] hidden font-accent text-base uppercase leading-[1.2] text-primary/70 lg:block"
+        className="absolute bottom-[17.96%] left-[56.62%] hidden font-accent text-base uppercase leading-[1.2] text-primary/70 tab:block"
       >
         @2026
       </p>
 
       <div
         data-hero-reveal
-        className="absolute bottom-[18.15%] right-[3.91%] hidden items-end gap-2 font-accent text-base uppercase leading-[1.2] text-primary/70 lg:flex"
+        className="absolute bottom-[18.15%] right-[3.91%] hidden items-end gap-2 font-accent text-base uppercase leading-[1.2] text-primary/70 tab:flex"
       >
         <span>Scroll more</span>
         <span aria-hidden="true">[→]</span>
@@ -270,7 +270,7 @@ export function Home() {
           agree exactly at the 393x852 frame the collage is drawn for. */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 bottom-0 font-wordmark text-[min(18.3vw,11vh)] font-bold uppercase leading-none text-primary lg:hidden"
+        className="pointer-events-none absolute inset-x-0 bottom-0 font-wordmark text-[min(18.3vw,11vh)] font-bold uppercase leading-none text-primary tab:hidden"
       >
         <span
           data-hero-reveal
@@ -312,7 +312,7 @@ export function Home() {
       <p
         data-hero-reveal
         aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 bottom-[-0.2385em] hidden whitespace-nowrap text-center font-wordmark text-[13.542vw] font-bold uppercase leading-none text-primary/60 lg:block"
+        className="pointer-events-none absolute inset-x-0 bottom-[-0.2385em] hidden whitespace-nowrap text-center font-wordmark text-[13.542vw] font-bold uppercase leading-none text-primary/60 tab:block"
       >
         @01UIUXDesigner
       </p>

@@ -20,10 +20,10 @@ export function Header() {
   return (
     <header className="relative w-full">
       <Navbar>
-        <MobileNav className="relative h-23 w-full py-4 lg:py-6 flex">
+        <MobileNav className="relative h-23 w-full py-4 tab:py-6 flex">
           <NavbarLogo className="" />
 
-          <div className="absolute left-[27.5%] top-5.5 lg:flex flex-col font-accent text-sm xl:text-base uppercase leading-[1.2] text-primary/70 hidden">
+          <div className="absolute left-[27.5%] top-5.5 tab:flex flex-col font-accent text-sm xl:text-base uppercase leading-[1.2] text-primary/70 hidden">
             <a
               href={`mailto:${profile.email}`}
               className="transition-colors hover:text-accent"
@@ -38,7 +38,7 @@ export function Header() {
             </a>
           </div>
 
-          <span className="absolute left-1/2 top-5.5 lg:flex items-center gap-1 font-accent text-sm xl:text-base uppercase leading-[1.2] text-primary/70 hidden">
+          <span className="absolute left-1/2 top-5.5 tab:flex items-center gap-1 font-accent text-sm xl:text-base uppercase leading-[1.2] text-primary/70 hidden">
             <span
               aria-hidden="true"
               className="h-2 w-2 rounded-full bg-[#38A86A]"
@@ -50,7 +50,7 @@ export function Header() {
             <MobileNavToggle isOpen={isMenuOpen} onClick={toggle} />
             <a
               href={`mailto:${profile.email}`}
-              className="lg:flex h-11 w-37.5 items-center justify-center bg-secondary px-4 font-accent text-base uppercase leading-[1.2] text-primary transition-colors hover:bg-accent hidden"
+              className="tab:flex h-11 w-37.5 items-center justify-center bg-secondary px-4 font-accent text-base uppercase leading-[1.2] text-primary transition-colors hover:bg-accent hidden"
             >
               Get in touch
             </a>

@@ -124,6 +124,18 @@
     --font-display: "Neue Montreal", "Helvetica Neue", Helvetica, Arial, sans-serif;
     --font-accent: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     --font-wordmark: "Teko", "Oswald", "Arial Narrow", sans-serif;
+
+    /* Breakpoints
+     * The design comes in two frames, a 393 phone and a 1920 desktop, so a
+     * section switches once. `lg` keeps its 1024 default because the footer's
+     * desktop arrangement needs roughly 1200 to hold its line breaks and does
+     * not survive being handed a landscape tablet early.
+     *
+     * The hero does survive it, and below 1024 it was the phone layout
+     * stretched across a viewport wide enough for the desktop one — so the
+     * hero and the header (which has to switch with it, or a desktop hero
+     * gets a phone header) move over at `tab` instead. */
+    --breakpoint-tab: 960px;
 }
 
 @layer base {
