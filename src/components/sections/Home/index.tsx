@@ -127,7 +127,7 @@ export function Home() {
       <div
         data-hero-reveal
         aria-hidden="true"
-        className="pointer-events-none absolute bottom-0 left-[-71.8%] right-[-44.5%] top-[330px] mix-blend-difference lg:bottom-auto lg:left-[5.47%] lg:right-auto lg:top-[14.17%] lg:h-[90%] lg:w-[79.62%]"
+        className="pointer-events-none absolute left-[-71.8%] right-[-44.5%] top-[38.73%] aspect-[850/540] mix-blend-difference min-[530px]:inset-x-[-10%] min-[530px]:top-[42%] lg:left-[5.47%] lg:right-auto lg:top-[14.17%] lg:aspect-[1528/972] lg:h-auto lg:w-[79.62%]"
       >
         {/* The poster is the render's first frame, so the plate is already
             blending correctly before a byte of video has decoded, and it is
@@ -156,7 +156,7 @@ export function Home() {
         data-hero-reveal
         role="img"
         aria-label={`${profile.name} — portrait`}
-        className="absolute left-[4.33%] top-[108px] aspect-[202/221] w-[22.84%] overflow-hidden lg:left-auto lg:right-[12.43%] lg:top-[49.17%] lg:w-[10.54%]"
+        className="absolute left-[4.33%] top-[108px] aspect-[202/221] w-[22.84%] overflow-hidden min-[788px]:w-[180px] lg:left-auto lg:right-[12.43%] lg:top-[49.17%] lg:w-[10.54%]"
       >
         {/* Only the first frame is mounted; every switch after it is the
             cycle's, spawned by the hook. */}
@@ -214,7 +214,7 @@ export function Home() {
           moves that call to action under the paragraph instead. */}
       <div
         data-hero-reveal
-        className="absolute left-4 top-[241px] flex w-[299px] max-w-[calc(100%-2rem)] flex-col gap-2.5 font-accent text-sm uppercase leading-[1.2] lg:left-auto lg:right-[7.81%] lg:top-[33.8%] lg:max-w-none lg:text-base"
+        className="absolute left-4 top-[241px] flex w-[299px] max-w-[calc(100%-2rem)] flex-col gap-2.5 font-accent text-sm uppercase leading-[1.2] min-[530px]:top-[calc(130px+25vw)] min-[788px]:top-[325px] lg:left-auto lg:right-[7.81%] lg:top-[33.8%] lg:max-w-none lg:text-base"
       >
         <p className="text-primary/70">
           Passionate about creating unforgettable and beautiful digital
@@ -264,11 +264,13 @@ export function Home() {
 
       {/* A zero-height anchor on the bottom edge: the collage is laid out in
           `em`, so one font-size governs the whole arrangement and the words
-          keep their overlaps at every width instead of drifting apart. The
-          cap freezes that scale once the viewport outgrows a phone. */}
+          keep their overlaps at every width instead of drifting apart. Width
+          alone would set that size from the phone's proportions and leave the
+          last line half off a shorter screen, so height caps it — the two
+          agree exactly at the 393x852 frame the collage is drawn for. */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 bottom-0 font-wordmark text-[min(18.3vw,88px)] font-bold uppercase leading-none text-primary lg:hidden"
+        className="pointer-events-none absolute inset-x-0 bottom-0 font-wordmark text-[min(18.3vw,11vh)] font-bold uppercase leading-none text-primary lg:hidden"
       >
         <span
           data-hero-reveal

@@ -4,7 +4,7 @@ import { useLenis } from "lenis/react";
 import type { CSSProperties } from "react";
 import { useEffect, useRef, useState } from "react";
 import { useImageCycleRandom } from "../../../hooks/useImageCycleRandom";
-import { markIntroDone } from "../../../hooks/useIntroDone";
+import { claimIntro, markIntroDone } from "../../../hooks/useIntroDone";
 import { useIsMobile } from "../../../hooks/useIsMobile";
 
 gsap.registerPlugin(useGSAP);
@@ -32,6 +32,10 @@ const splitWord = (word: string) =>
   ));
 
 export function IntroOverlay() {
+  // Claimed during render, not in an effect: the hero reads the flag while it
+  // renders, in this same pass, and an effect would land a frame too late.
+  claimIntro();
+
   const [done, setDone] = useState(false);
   const lenis = useLenis();
   // `lenis` is undefined on the first render; via a ref it stays out of the

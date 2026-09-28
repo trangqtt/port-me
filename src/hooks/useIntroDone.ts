@@ -10,7 +10,18 @@ import { useSyncExternalStore } from "react";
 // plain event fired then would be sent to an empty room. A stored flag can
 // still be read late.
 let introDone = false;
+let introClaimed = false;
 const listeners = new Set<() => void>();
+
+// The overlay is optional: App drops it whenever the rest of the page is
+// being worked on, and there is no intro at all on a second visit. Claiming
+// is what tells the hero there is something to wait for — unclaimed, the
+// hero reveals on its own rather than staying hidden for a handover that is
+// never coming. Called from the overlay's render, which runs before the
+// hero's in the same pass, so the flag is already set when the hero reads it.
+export const claimIntro = () => {
+  introClaimed = true;
+};
 
 export const markIntroDone = () => {
   if (introDone) return;
@@ -25,6 +36,6 @@ const subscribe = (onStoreChange: () => void) => {
   };
 };
 
-const getSnapshot = () => introDone;
+const getSnapshot = () => introDone || !introClaimed;
 
 export const useIntroDone = () => useSyncExternalStore(subscribe, getSnapshot);
