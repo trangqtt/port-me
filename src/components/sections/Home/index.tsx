@@ -1,7 +1,7 @@
 import { useGSAP } from "@gsap/react";
 import { gsap } from "gsap";
 import { profile } from "../../../data/profile";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useImageCycleRandom } from "../../../hooks/useImageCycleRandom";
 import { useIntroDone } from "../../../hooks/useIntroDone";
 import { ScrambleLink } from "../../ui/ScrambleLink";
@@ -19,7 +19,34 @@ export function Home() {
   const { addImageCycleInfiniteSequence, cycleImages, imageCycleRef } =
     useImageCycleRandom(HERO_IMAGES);
   const sectionRef = useRef<HTMLElement>(null);
+  const renderRef = useRef<HTMLVideoElement>(null);
   const introDone = useIntroDone();
+
+  // `autoPlay` is the attribute the browser honours before React ever runs,
+  // which is what keeps the loop going on the phones that refuse a scripted
+  // play(). Suppressing it therefore has to happen after the fact: pausing
+  // back to frame zero leaves exactly the poster on screen, so the plate is
+  // identical to the still hero it replaced.
+  useEffect(() => {
+    const render = renderRef.current;
+    if (!render) return;
+
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const apply = () => {
+      if (query.matches) {
+        render.pause();
+        render.currentTime = 0;
+      } else {
+        void render.play().catch(() => {});
+      }
+    };
+
+    apply();
+    query.addEventListener("change", apply);
+    return () => {
+      query.removeEventListener("change", apply);
+    };
+  }, []);
 
   // The blocks come in only once the intro is out of the way. They are hidden
   // from here rather than from a class, so markup that never runs this — no
@@ -102,14 +129,22 @@ export function Home() {
         aria-hidden="true"
         className="pointer-events-none absolute bottom-0 left-[-71.8%] right-[-44.5%] top-[330px] mix-blend-difference lg:bottom-auto lg:left-[5.47%] lg:right-auto lg:top-[14.17%] lg:h-[90%] lg:w-[79.62%]"
       >
-        <img
-          src="/images/hero-3d.webp"
-          alt=""
+        {/* The poster is the render's first frame, so the plate is already
+            blending correctly before a byte of video has decoded, and it is
+            what stays on screen when the loop is suppressed. */}
+        <video
+          ref={renderRef}
+          src="/videos/hero-3d.mp4"
+          poster="/images/hero-3d.webp"
           width={1280}
           height={720}
-          loading="eager"
-          decoding="async"
-          fetchPriority="high"
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="auto"
+          disablePictureInPicture
+          tabIndex={-1}
           className="h-full w-full select-none object-cover"
         />
       </div>
