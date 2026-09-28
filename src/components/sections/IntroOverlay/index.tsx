@@ -313,7 +313,7 @@ export function IntroOverlay() {
         <h1
           ref={headingRef}
           aria-label="Mai Hoa"
-          className="flex items-center justify-center whitespace-nowrap font-display text-[clamp(64px,16vw,200px)] font-medium leading-[1.3]"
+          className="flex items-center justify-center whitespace-nowrap font-display text-[clamp(64px,16vw,200px)] font-medium leading-[1]"
         >
           <span
             ref={introStartRef}
@@ -331,13 +331,6 @@ export function IntroOverlay() {
             style={{ "--slot-w": "min(430px, 55vw)" } as CSSProperties}
             className="relative w-0 shrink-0 self-stretch"
           >
-            {/* The photo's own 430x500; the min() only bites on narrow
-                screens. Both dimensions are declared from one variable rather
-                than leaning on aspect-ratio: the clip below sizes itself with
-                a percentage height, and a percentage needs a containing block
-                whose height is definite. An aspect-ratio-derived height is not
-                reliably that, and when it falls back the clip collapses to
-                zero and the photo never appears. */}
             <span
               ref={slotFrameRef}
               className="absolute left-1/2 top-1/2 h-[calc(var(--slot-w)*500/430)] w-(--slot-w) -translate-x-1/2 -translate-y-1/2"
@@ -357,11 +350,6 @@ export function IntroOverlay() {
                   ref={imageCycleRef}
                   className="absolute left-1/2 top-1/2 h-full w-(--slot-w) -translate-x-1/2 -translate-y-1/2"
                 >
-                  {/* Only the first frame is mounted. The width reveal is a
-                      reveal, not a switch — it should uncover one photo, and
-                      a stack of three here made the cycle's first tick clone
-                      that same first photo again, costing a visible beat.
-                      Every switch after the reveal is the hook's. */}
                   <img
                     src={cycleImages[0]}
                     alt=""
@@ -378,15 +366,6 @@ export function IntroOverlay() {
               </span>
             </span>
 
-            {/* Same box as the slot frame, so scale 1 lands on the photo's
-                bounds to the pixel — that is the beat the growth pauses on
-                before it takes the screen.
-
-                It sits beside the frame rather than inside it because the
-                frame's -translate-*-1/2 makes it a stacking context, which
-                would trap this z-20 in there and let the words' z-10 paint
-                over the panel all the way to fullscreen. Out here the z-20
-                is measured against the words directly. */}
             <span
               ref={finalPanelRef}
               aria-hidden="true"
