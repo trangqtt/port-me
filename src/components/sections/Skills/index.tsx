@@ -128,18 +128,38 @@ export function Skills() {
     <section
       id="skills"
       aria-labelledby="skills-title"
-      className="relative min-h-dvh w-full overflow-hidden bg-primary px-5 py-16 lg:py-22 sm:px-8 lg:px-[4.48vw] lg:pb-20 2xl:pt-[17vh]"
+      className="relative min-h-dvh w-full overflow-hidden bg-primary px-5 py-16 lg:py-22 sm:px-8 lg:px-[4.48vw] lg:pb-20 2xl:pt-[10vh]"
     >
-      <header className="flex flex-col gap-1 lg:grid lg:grid-cols-4 lg:items-end">
-        <p className="font-accent text-sm uppercase leading-[1.2] text-primary/50 lg:text-base">
+      <header className="relative flex flex-col gap-1 lg:block">
+        <p className="font-accent text-sm uppercase leading-[1.2] text-primary/50 lg:absolute lg:left-0 lg:top-[1.66%] lg:text-base">
           [My Skills]
         </p>
-        <h2
-          id="skills-title"
-          className="font-display text-[26px] lg:text-5xl font-medium leading-[1.2] text-primary lg:col-span-2 lg:pl-12 2xl:text-[52px] lg:font-normal lg:leading-none"
-        >
-          Skills
+
+        {/* One line, sized off the frame: the 190px block on a 1920 frame is
+            9.896vw, and Teko is condensed enough that it never needs fitting.
+            Centred on the section rather than on its own measured box, which
+            in the frame sits a few pixels right of centre. */}
+        {/* `.font-display` and `.font-wordmark` are hand-written utilities, so
+            Tailwind has no breakpoint variants for them and the later of the
+            two would win at every width. Two spans, one per face, the way the
+            hero already switches its wordmark. */}
+        <h2 id="skills-title">
+          <span className="font-display text-[26px] font-medium leading-[1.2] text-primary lg:hidden">
+            My Skills
+          </span>
+          {/* 190px on the 1920 frame, and Teko is condensed enough to hold the
+              line without fitting. */}
+          <span className="hidden font-wordmark text-[9.896vw] font-bold uppercase leading-none text-primary/60 lg:block lg:text-center">
+            My Skills
+          </span>
         </h2>
+
+        <p
+          aria-hidden="true"
+          className="hidden font-accent text-base uppercase leading-[1.2] text-primary/50 lg:absolute lg:right-0 lg:top-[1.17%] lg:block"
+        >
+          @003
+        </p>
       </header>
 
       <div ref={containerRef} className="relative mt-4 md:mt-6 2xl:mt-17">
@@ -159,7 +179,7 @@ export function Skills() {
                   onPointerLeave={() => leavePreview(index)}
                   onBlur={() => leavePreview(index)}
                   className={cn(
-                    "grid min-h-23 w-full grid-cols-[minmax(0,1fr)_60px] items-center gap-4 border-b border-line py-4 text-left font-accent uppercase transition-colors duration-300 focus-visible:-outline-offset-2 focus-visible:outline-2 focus-visible:outline-accent lg:min-h-16 lg:grid-cols-[6.6rem_minmax(12rem,1fr)_7rem_minmax(20rem,1fr)] lg:gap-0 lg:px-0 2xl:py-6 lg:text-base",
+                    "grid min-h-23 w-full grid-cols-[minmax(0,1fr)_60px] items-center gap-4 border-b border-line py-4 text-left font-accent uppercase transition-colors duration-300 focus-visible:-outline-offset-2 focus-visible:outline-2 focus-visible:outline-accent lg:min-h-16 lg:grid-cols-[11.2%_minmax(0,48.87%)_6.1%_minmax(0,1fr)] lg:gap-0 lg:px-0 lg:py-0 lg:text-base",
                     isActive
                       ? "lg:bg-white lg:text-[#0d0d0d] lg:px-2"
                       : "text-primary",
@@ -177,7 +197,7 @@ export function Skills() {
                     <span className="text-sm leading-none lg:text-base">
                       {skill.name}
                     </span>
-                    <span className="text-sm leading-[1.2] lg:col-start-4 lg:row-start-1 lg:text-base lg:leading-none">
+                    <span className="text-sm leading-[1.2] lg:col-start-4 lg:row-start-1 lg:text-right lg:text-base lg:leading-none">
                       {skill.description}
                     </span>
                   </span>
@@ -209,11 +229,11 @@ export function Skills() {
                   src={skill.url}
                   alt=""
                   aria-hidden="true"
-                  width={200}
-                  height={200}
+                  width={400}
+                  height={450}
                   loading="lazy"
                   decoding="async"
-                  className="pointer-events-none fixed left-0 top-0 z-30 hidden size-50 object-contain opacity-0 lg:block"
+                  className="pointer-events-none fixed left-0 top-0 z-30 hidden h-[23.4vw] max-h-[450px] w-[20vw] max-w-[400px] object-contain opacity-0 lg:block"
                 />
               </li>
             );
