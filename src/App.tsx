@@ -31,7 +31,7 @@ export default function App() {
       <Header />
 
       <main>
-        <IntroOverlay />
+        {/* <IntroOverlay /> */}
         <Home />
         <About />
         <Skills />
