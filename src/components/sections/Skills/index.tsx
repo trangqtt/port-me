@@ -1,126 +1,23 @@
-import { useGSAP } from "@gsap/react";
-import { gsap } from "gsap";
-import { useCallback, useRef, useState } from "react";
+import { useState } from "react";
 import { skills } from "../../../data/skills";
 import { cn } from "../../../lib/utils";
 
-gsap.registerPlugin(useGSAP);
-
 const FEATURED_SKILL_INDEX = 3;
 
-interface QuickSetters {
-  x: ReturnType<typeof gsap.quickTo>;
-  y: ReturnType<typeof gsap.quickTo>;
-}
+// The preview is parked rather than carried. Its right edge sits on the end of
+// the name column: that column and the description column are the two
+// `minmax(_,1fr)` tracks either side of a 6.6rem and a 7rem fixed one, so they
+// split whatever is left equally and the boundary lands at
+// `6.6rem + (100% - 13.6rem) / 2`, which is 0.2rem short of the halfway mark.
+const NAME_COLUMN_END = "calc(50% + 0.2rem)";
 
-// Per-row cursor-follow preview, one image per skill, after GreenSock's "show cursor image on hover" pattern: https://codepen.io/GreenSock/pen/PwqrzeG
 export function Skills() {
-  const [activeIndex, setActiveIndex] = useState(FEATURED_SKILL_INDEX);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const imageRefs = useRef<(HTMLImageElement | null)[]>([]);
-  const quickSettersRef = useRef<(QuickSetters | null)[]>([]);
-  const fadeTweensRef = useRef<(gsap.core.Tween | null)[]>([]);
-  const followedIndexRef = useRef<number | null>(null);
-  const firstMoveRef = useRef(true);
-  const pendingPointRef = useRef<{ clientX: number; clientY: number } | null>(
-    null,
-  );
-  const rafIdRef = useRef<number | null>(null);
-
-  const align = useCallback((point: { clientX: number; clientY: number }) => {
-    const index = followedIndexRef.current;
-    if (index === null) return;
-    const quickTo = quickSettersRef.current[index];
-    if (!quickTo) return;
-    if (firstMoveRef.current) {
-      quickTo.x(point.clientX, point.clientX);
-      quickTo.y(point.clientY, point.clientY);
-      firstMoveRef.current = false;
-    } else {
-      quickTo.x(point.clientX);
-      quickTo.y(point.clientY);
-    }
-  }, []);
-
-  // Coalesces native pointermove events to one align() per animation frame.
-  const flushAlign = useCallback(() => {
-    rafIdRef.current = null;
-    if (pendingPointRef.current) align(pendingPointRef.current);
-  }, [align]);
-
-  // Stable identity: added/removed as the same document listener reference.
-  const onDocumentPointerMove = useCallback(
-    (event: PointerEvent) => {
-      pendingPointRef.current = {
-        clientX: event.clientX,
-        clientY: event.clientY,
-      };
-      if (rafIdRef.current === null) {
-        rafIdRef.current = window.requestAnimationFrame(flushAlign);
-      }
-    },
-    [flushAlign],
-  );
-
-  const stopDocumentPointerMove = useCallback(() => {
-    document.removeEventListener("pointermove", onDocumentPointerMove);
-    if (rafIdRef.current !== null) {
-      window.cancelAnimationFrame(rafIdRef.current);
-      rafIdRef.current = null;
-    }
-  }, [onDocumentPointerMove]);
-
-  const { contextSafe } = useGSAP(
-    () => {
-      skills.forEach((_, index) => {
-        const image = imageRefs.current[index];
-        if (!image) return;
-
-        gsap.set(image, { xPercent: -50, yPercent: -50, autoAlpha: 0 });
-        quickSettersRef.current[index] = {
-          x: gsap.quickTo(image, "x", { duration: 0.4, ease: "power3" }),
-          y: gsap.quickTo(image, "y", { duration: 0.4, ease: "power3" }),
-        };
-        fadeTweensRef.current[index] = gsap.to(image, {
-          autoAlpha: 1,
-          ease: "none",
-          duration: 0.1,
-          paused: true,
-        });
-      });
-
-      return () => {
-        stopDocumentPointerMove();
-      };
-    },
-    { scope: containerRef },
-  );
-
-  const canFollowPointer = () =>
-    !window.matchMedia("(prefers-reduced-motion: reduce)").matches &&
-    window.matchMedia("(hover: hover) and (pointer: fine)").matches;
-
-  const enterPreview = contextSafe(
-    (index: number, event: React.PointerEvent) => {
-      if (!canFollowPointer()) return;
-      firstMoveRef.current = true;
-      if (followedIndexRef.current !== index) {
-        fadeTweensRef.current[followedIndexRef.current ?? -1]?.reverse();
-        followedIndexRef.current = index;
-        document.addEventListener("pointermove", onDocumentPointerMove);
-      }
-      fadeTweensRef.current[index]?.play();
-      align(event);
-    },
-  );
-
-  const leavePreview = contextSafe((index: number) => {
-    fadeTweensRef.current[index]?.reverse();
-    if (followedIndexRef.current === index) {
-      followedIndexRef.current = null;
-      stopDocumentPointerMove();
-    }
-  });
+  // Null means the pointer is off the list. The row highlight falls back to the
+  // featured skill so the table is never blank, but the preview keys off the
+  // hover itself, so it is only on screen while a row is actually under the
+  // pointer.
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const activeIndex = hoveredIndex ?? FEATURED_SKILL_INDEX;
 
   return (
     <section
@@ -152,8 +49,13 @@ export function Skills() {
         </h2>
       </header>
 
-      <div ref={containerRef} className="relative mt-4 md:mt-6 2xl:mt-17">
-        <ul className="relative z-10">
+      <div className="relative mt-4 md:mt-6 2xl:mt-[4vh]">
+        {/* Catches the pointer leaving through a gap or off the end, which no
+            single row's own leave handler would see. */}
+        <ul
+          className="relative z-10"
+          onMouseLeave={() => setHoveredIndex(null)}
+        >
           {skills.map((skill, index) => {
             const isActive = index === activeIndex;
             const number = String(index + 1).padStart(2, "0");
@@ -162,14 +64,11 @@ export function Skills() {
               <li key={skill.name}>
                 <button
                   type="button"
-                  onMouseEnter={() => setActiveIndex(index)}
-                  onFocus={() => setActiveIndex(index)}
-                  onPointerEnter={(event) => enterPreview(index, event)}
-                  onPointerMove={(event) => enterPreview(index, event)}
-                  onPointerLeave={() => leavePreview(index)}
-                  onBlur={() => leavePreview(index)}
+                  onMouseEnter={() => setHoveredIndex(index)}
+                  onFocus={() => setHoveredIndex(index)}
+                  onBlur={() => setHoveredIndex(null)}
                   className={cn(
-                    "grid min-h-23 w-full grid-cols-[minmax(0,1fr)_60px] items-center gap-4 border-b border-line py-4 text-left font-accent uppercase transition-colors duration-300 focus-visible:-outline-offset-2 focus-visible:outline-2 focus-visible:outline-accent lg:min-h-16 lg:grid-cols-[6.6rem_minmax(12rem,1fr)_7rem_minmax(20rem,1fr)] lg:gap-0 lg:px-0 2xl:py-6 lg:text-base",
+                    "grid min-h-23 w-full grid-cols-[minmax(0,1fr)_60px] items-center gap-4 border-b border-line py-4 text-left font-accent uppercase transition-colors duration-300 focus-visible:-outline-offset-2 focus-visible:outline-2 focus-visible:outline-accent lg:min-h-[6vh] lg:grid-cols-[6.6rem_minmax(12rem,1fr)_7rem_minmax(20rem,1fr)] lg:gap-0 lg:px-0 2xl:py-6 lg:text-base",
                     isActive
                       ? "lg:bg-white lg:text-[#0d0d0d] lg:px-2"
                       : "text-primary",
@@ -212,24 +111,43 @@ export function Skills() {
                     className="pointer-events-none size-15 justify-self-end lg:hidden"
                   />
                 </button>
-                <img
-                  ref={(node) => {
-                    imageRefs.current[index] = node;
-                  }}
-                  src={skill.url}
-                  alt=""
-                  aria-hidden="true"
-                  width={360}
-                  height={450}
-                  loading="lazy"
-                  decoding="async"
-                  // The tilt is the `rotate` property, not a transform: GSAP owns this element's transform for the cursor follow, so the two compose instead of overwriting each other.
-                  className="pointer-events-none fixed left-0 top-0 z-30 hidden aspect-[360/450] w-[min(22vw,360px)] rotate-[3.2deg] object-contain opacity-0 lg:block"
-                />
               </li>
             );
           })}
         </ul>
+
+        {/* Above the rows, so the active row's white bar passes behind it
+            rather than cutting across it. */}
+        <div
+          aria-hidden="true"
+          style={{
+            right: NAME_COLUMN_END,
+            // Centred on the active row. Every row is the same height, so its
+            // centre is a share of the table and needs no measuring: the CSS
+            // stays correct if rows are added or the row height changes.
+            top: `${((activeIndex + 0.5) / skills.length) * 100}%`,
+          }}
+          className="pointer-events-none absolute z-20 hidden -translate-y-1/2 transition-[top] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] lg:block"
+        >
+          <div className="relative aspect-[360/450] w-[min(22vw,360px)]">
+            {skills.map((skill, index) => (
+              <img
+                key={skill.name}
+                src={skill.url}
+                alt=""
+                width={360}
+                height={450}
+                loading="lazy"
+                decoding="async"
+                className={cn(
+                  // The tilt is the design's 3.2 degrees.
+                  "absolute inset-0 h-full w-full rotate-[3.2deg] object-contain transition-opacity duration-300",
+                  index === hoveredIndex ? "opacity-100" : "opacity-0",
+                )}
+              />
+            ))}
+          </div>
+        </div>
       </div>
     </section>
   );

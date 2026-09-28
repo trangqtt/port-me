@@ -287,7 +287,7 @@ export function IntroOverlay() {
         <h1
           ref={headingRef}
           aria-label="Mai Hoa"
-          className="flex items-center justify-center whitespace-nowrap font-display text-[clamp(64px,16vw,200px)] font-medium leading-[1]"
+          className="flex items-center justify-center whitespace-nowrap font-display text-[clamp(64px,16vw,200px)] font-medium leading-none"
         >
           <span
             ref={introStartRef}
