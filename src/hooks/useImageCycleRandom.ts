@@ -4,9 +4,7 @@ import { useMemo, useRef } from "react";
 const CYCLE_INTERVAL = 0.34;
 const POSITION_RANGE = 1;
 
-// How many cards stay in the DOM. The stack is what keeps whatever sits
-// behind the cycle covered while the newest card scales up over it, so it
-// has to be more than one even where the markup mounts a single frame.
+// How many cards stay in the DOM; the stack keeps what sits behind covered while the newest card scales up, so it must be more than one.
 const LIVE_CARDS = 3;
 
 export function useImageCycleRandom(images: readonly string[]) {
@@ -22,8 +20,7 @@ export function useImageCycleRandom(images: readonly string[]) {
   );
 
 
-  // Duplicates cards forever: each tick clones the next source image, fades
-  // it in, and removes the oldest clone once the pool is full.
+  // Duplicates cards forever: each tick clones the next image, fades it in and removes the oldest once the pool is full.
   const addImageCycleInfiniteSequence = (timeline: gsap.core.Timeline) => {
     const container = imageCycleRef.current;
     const cards = container?.querySelectorAll<HTMLElement>(
@@ -32,8 +29,7 @@ export function useImageCycleRandom(images: readonly string[]) {
     if (!container || !cards?.length) return;
 
     const template = cards[0] as HTMLImageElement;
-    // Resume after the frames already on screen, so the first tick is a real
-    // switch rather than a clone of the one the reveal just uncovered.
+    // Resume after the frames already on screen, so the first tick is a real switch rather than a clone of the one just uncovered.
     let nextIndex = cards.length;
 
     const spawnNext = () => {
@@ -43,8 +39,7 @@ export function useImageCycleRandom(images: readonly string[]) {
       };
       const clone = template.cloneNode(true) as HTMLImageElement;
       clone.src = cycleImages[nextIndex % cycleImages.length];
-      // Only the very first render should be eager/high-priority — every
-      // spawned clone thereafter must load lazily like the rest.
+      // Only the very first render is eager and high-priority; every spawned clone loads lazily.
       clone.loading = "lazy";
       clone.fetchPriority = "auto";
       container.appendChild(clone);
@@ -67,8 +62,7 @@ export function useImageCycleRandom(images: readonly string[]) {
       const live = container.querySelectorAll("[data-image-cycle-card]");
       if (live.length > LIVE_CARDS) {
         const oldest = live[0] as HTMLElement;
-        // Drops out of the query straight away, so the next tick can't pick
-        // the same card again while this one is still fading.
+        // Drops out of the query straight away, so the next tick cannot pick the same card while it is still fading.
         oldest.removeAttribute("data-image-cycle-card");
         gsap.to(oldest, {
           autoAlpha: 0,

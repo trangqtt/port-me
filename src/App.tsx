@@ -26,8 +26,7 @@ export default function App() {
         anchors: true,
       }}
     >
-      {/* Header must be inside <ReactLenis> so it can access the Lenis
-          context — it needs to pause/resume scroll while the menu is open. */}
+      {/* Header sits inside ReactLenis so it can pause/resume scroll via the Lenis context while the menu is open. */}
       <Header />
 
       <main>

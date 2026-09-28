@@ -10,6 +10,7 @@ import React, { useRef, useState } from "react";
 import { cn } from "../../lib/utils";
 import { LoadingPathLoop } from "../Icon/LoadingPathLoop";
 import MenuIcon from "../Icon/MenuIcon";
+import { NavbarScrolledContext } from "./navbar-scrolled-context";
 
 interface NavbarProps {
   children: React.ReactNode;
@@ -71,14 +72,16 @@ export const Navbar = ({ children, className }: NavbarProps) => {
       // IMPORTANT: Change this to class of `fixed` if you want the navbar to be fixed
       className={cn("fixed inset-x-0 top-0 z-40 w-full", className)}
     >
-      {React.Children.map(children, (child) =>
-        React.isValidElement(child) && typeof child.type !== "string"
-          ? React.cloneElement(
-              child as React.ReactElement<{ visible?: boolean }>,
-              { visible },
-            )
-          : child,
-      )}
+      <NavbarScrolledContext.Provider value={visible}>
+        {React.Children.map(children, (child) =>
+          React.isValidElement(child) && typeof child.type !== "string"
+            ? React.cloneElement(
+                child as React.ReactElement<{ visible?: boolean }>,
+                { visible },
+              )
+            : child,
+        )}
+      </NavbarScrolledContext.Provider>
     </motion.div>
   );
 };
@@ -148,20 +151,12 @@ export const NavItems = ({ items, className, onItemClick }: NavItemsProps) => {
 export const MobileNav = ({ children, className, visible }: MobileNavProps) => {
   return (
     <motion.div
-      animate={{
-        backdropFilter: visible ? "blur(20px)" : "none",
-        boxShadow: visible
-          ? "0 0 24px rgba(34, 42, 53, 0.06), 0 1px 1px rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(34, 42, 53, 0.04), 0 0 4px rgba(34, 42, 53, 0.08), 0 16px 68px rgba(47, 48, 55, 0.05), 0 1px 0 rgba(255, 255, 255, 0.1) inset"
-          : "none",
-      }}
-      transition={{
-        type: "spring",
-        stiffness: 200,
-        damping: 50,
-      }}
       className={cn(
-        "relative z-20 flex w-screen flex-row items-center justify-between bg-transparent px-4 lg:px-8 xl:px-20",
-        visible && "bg-white/80 dark:bg-neutral-950/80 ",
+        // Every property that changes between the two states is written in both as an interpolable value; `auto`, `none` and a missing height snap instead of easing.
+        "relative z-20 flex w-auto flex-row items-center justify-between bg-transparent px-4 backdrop-blur-[0px] transition-[margin,padding,height,border-radius,background-color,backdrop-filter] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] lg:px-8 xl:px-20",
+        // Figma 722:4206: the bar condenses into a centred 600px glass pill with a 2px separating blur; one margin centres, caps and gutters it, bottoming out at 16px.
+        visible &&
+          "mx-[max(1rem,calc(50vw-300px))] rounded-[4px] bg-white/5 p-3 backdrop-blur-[2px]",
         className,
       )}
     >
@@ -210,8 +205,7 @@ export const NavMenu = ({ children, className, isOpen }: NavMenuProps) => {
             aria-modal="true"
             aria-label="Site navigation"
             className={cn(
-              // Full-viewport curtain on mobile; on desktop it narrows to a
-              // 550px panel anchored to the right edge instead of full-bleed.
+              // Full-viewport curtain on mobile; on desktop it narrows to a 550px panel anchored to the right edge.
               "fixed inset-0 z-50 flex w-full flex-col overflow-y-auto bg-bg-primary p-8 pb-0 text-primary lg:inset-y-0 lg:left-auto lg:right-0 lg:w-full lg:max-w-137.5",
               className,
             )}
@@ -270,7 +264,7 @@ export const NavbarLogo = ({
         />
       </div>
       {!isOpen && (
-        <span className="font-display text-[28px] font-medium leading-none text-primary sm:text-4xl">
+        <span className="font-display text-[28px] font-medium leading-none text-primary sm:text-[32px]">
           MaiHoa
         </span>
       )}
@@ -292,8 +286,7 @@ export const NavbarButton = ({
   className?: string;
   variant?: "primary" | "secondary" | "dark" | "gradient";
 } & (
-  | React.ComponentPropsWithoutRef<"a">
-  | React.ComponentPropsWithoutRef<"button">
+  React.ComponentPropsWithoutRef<"a"> | React.ComponentPropsWithoutRef<"button">
 )) => {
   const baseStyles =
     "px-4 py-2 rounded-md bg-white button bg-white text-black text-sm font-bold relative cursor-pointer hover:-translate-y-0.5 transition duration-200 inline-block text-center";

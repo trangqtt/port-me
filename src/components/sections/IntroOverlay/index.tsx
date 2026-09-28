@@ -18,8 +18,7 @@ const DEFAULT_IMAGES = [
 // Seconds of cycling before the final panel arrives (~1 image every 0.34s).
 const CYCLE_HOLD = 1;
 
-// One block per letter so the word's overflow-hidden wrapper can mask a
-// staggered slide-up. Split per word: a space would collapse as a flex item.
+// One block per letter so the overflow-hidden wrapper can mask a staggered slide-up; split per word since a space collapses as a flex item.
 const splitWord = (word: string) =>
   Array.from(word).map((letter, index) => (
     <span
@@ -34,8 +33,7 @@ const splitWord = (word: string) =>
 export function IntroOverlay() {
   const [done, setDone] = useState(false);
   const lenis = useLenis();
-  // `lenis` is undefined on the first render; via a ref it stays out of the
-  // useGSAP deps, which would otherwise rebuild the timeline mid-intro.
+  // `lenis` is undefined on first render; a ref keeps it out of the useGSAP deps, which would otherwise rebuild the timeline mid-intro.
   const lenisRef = useRef(lenis);
   lenisRef.current = lenis;
   const isMobile = useIsMobile();
@@ -111,9 +109,7 @@ export function IntroOverlay() {
         .set(finalPanelRef.current, { scale: 0 })
         .set(roleLabelRef.current, { autoAlpha: 0, width: 0 });
 
-      // The slot sits between two words of unequal width, so it is
-      // (Mai - Hoa) / 2 off the h1's centre. Read late so a webfont swap
-      // can't bake in a stale number.
+      // The slot sits between words of unequal width, so it is (Mai - Hoa) / 2 off centre; read late so a webfont swap cannot bake in a stale number.
       const slotRecentre = () =>
         ((introEndRef.current?.getBoundingClientRect().width ?? 0) -
           (introStartRef.current?.getBoundingClientRect().width ?? 0)) /
@@ -135,9 +131,7 @@ export function IntroOverlay() {
         groupShift = window.innerWidth / 2 - (left + right) / 2;
       };
 
-      // Step 1 — the name reveals behind its word masks, then the label opens
-      // beside it and the pair slides into centre. fromTo throughout: on a
-      // rebuild `from` would read a mid-flight transform as its end value.
+      // Step 1: the name reveals behind its word masks, the label opens beside it and the pair slides to centre; fromTo throughout so a rebuild never reads a mid-flight transform.
       timeline
         .fromTo(
           letters,
@@ -167,8 +161,7 @@ export function IntroOverlay() {
           "<",
         );
 
-      // Step 2 — the slot parts the words. A phone has no room for a 430px
-      // slot, so there the name leaves first and the photo takes its place.
+      // Step 2: the slot parts the words; a phone has no room for a 430px slot, so there the name leaves first and the photo takes its place.
       if (isMobile) {
         timeline
           .to(
@@ -219,8 +212,7 @@ export function IntroOverlay() {
           .addLabel("imageCycle", ">");
       }
 
-      // The hero's cycle takes over on its own timeline: a repeat:-1 child
-      // would make the main timeline infinite and never reach the final panel.
+      // The cycle runs on its own timeline: a repeat:-1 child would make the main timeline infinite and never reach the final panel.
       timeline
         .add(() => {
           imageLoopRef.current?.kill();
@@ -234,14 +226,9 @@ export function IntroOverlay() {
           imageLoopRef.current = null;
         }, "imageCycleEnd");
 
-      // Nothing cuts the slot to black at imageCycleEnd: the last photo has to
-      // stay up, because the panel grows over it in full view below. Blacking
-      // the slot out first would play that growth as black on black.
+      // Nothing cuts the slot to black at imageCycleEnd: the last photo must stay up so the panel grows over it in view, not black on black.
 
-      // How far past scale 1 the panel has to go to fill the screen. Read
-      // late: the slot is min(430px, 55vw), so its size is viewport-dependent,
-      // and it is off the viewport centre by (Hoa - Mai) / 2 — the panel has
-      // to over-cover by twice that or it drags a bare edge behind it.
+      // How far past scale 1 the panel must go to fill the screen; read late since the slot is viewport-sized and off centre by (Hoa - Mai) / 2, so it over-covers by twice that.
       const panelCoverScale = () => {
         const frame = slotFrameRef.current;
         const rect = frame?.getBoundingClientRect();
@@ -253,9 +240,7 @@ export function IntroOverlay() {
         );
       };
 
-      // Step 3a — the panel arrives as one more card: scale 0 to exactly the
-      // photo's bounds, on the cycle's own spawn curve, so it reads as the
-      // last frame of the cycle rather than as a new element.
+      // Step 3a: the panel arrives as one more card, scale 0 to the photo's bounds on the cycle's own spawn curve, so it reads as the last frame.
       timeline.to(
         finalPanelRef.current,
         { scale: 1, duration: 0.55, ease: "power3.out" },
@@ -269,11 +254,7 @@ export function IntroOverlay() {
         ">+=0.06",
       );
 
-      // Step 4 — there is nothing left to animate. The full-screen panel is
-      // the hero's own background colour, so the overlay can simply be taken
-      // away: no fade, no wipe, nothing that would read as a second surface
-      // moving. A beat on the black, then `finishIntro` unmounts it and the
-      // hero reveals its content into the same colour.
+      // Step 4: the full-screen panel is the hero's own background, so no fade or wipe; a beat on black, then `finishIntro` unmounts it.
       timeline.to({}, { duration: 0.12 });
 
       return () => {
@@ -292,24 +273,17 @@ export function IntroOverlay() {
       ref={rootRef}
       className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-bg-secondary"
     >
-      {/* The cycle spawns the later frames as lazy clones 0.34s apart, far
-          too late to start fetching them then. React hoists these to <head>,
-          so they are warm in cache by the time the first switch lands. */}
+      {/* Later cycle frames spawn as lazy clones 0.34s apart, too late to fetch; React hoists these preloads to <head> so they are warm by the first switch. */}
       {cycleImages.slice(1).map((src) => (
         <link key={src} rel="preload" as="image" href={src} />
       ))}
 
-      {/* The h1 is the only centred element, so the slot lands on the viewport
-          centre once the box grows past 100vw. The label is positioned off it
-          rather than sharing the row, which would drag that centre sideways. */}
+      {/* The h1 is the only centred element, so the slot lands on viewport centre once the box grows past 100vw; the label hangs off it so it never drags that centre. */}
       <div
         ref={textGroupRef}
         className="relative flex items-center justify-center"
       >
-        {/* leading-[1.3] is the Figma value, and it is also what the masks
-            need: each word's overflow-hidden box is one line tall, so a line
-            shorter than the glyphs crops them at rest, and yPercent:100 then
-            fails to clear a glyph taller than the box hiding it. */}
+        {/* leading-[1.3] is the Figma value and what the masks need: a line shorter than the glyphs crops them at rest and yPercent:100 fails to clear them. */}
         <h1
           ref={headingRef}
           aria-label="Mai Hoa"
@@ -323,8 +297,7 @@ export function IntroOverlay() {
             {splitWord("Mai")}
           </span>
 
-          {/* Zero-width flex item, so widening it parts the words. Its
-              contents are absolute, so growth never reflows the line. */}
+          {/* Zero-width flex item, so widening it parts the words; its contents are absolute, so growth never reflows the line. */}
           <span
             ref={imageBoxRef}
             aria-hidden="true"
@@ -339,13 +312,10 @@ export function IntroOverlay() {
                 ref={growingImageRef}
                 className="absolute left-1/2 top-1/2 h-full w-0 overflow-hidden"
               >
-                {/* Fills the clip, so it still covers a full-bleed one. Matches the
-                    page background, so the final full-bleed panel is seamless. */}
+                {/* Fills the clip so it covers a full-bleed one and matches the page background, so the final panel is seamless. */}
                 <span className="pointer-events-none absolute inset-0 block bg-primary" />
 
-                {/* Matches the frame's ratio, so the clip reveals the photo
-                    instead of squashing it. Also the pool the cycle clones
-                    into: fading this span drops every card at once. */}
+                {/* Matches the frame's ratio so the clip reveals the photo instead of squashing it; also the pool the cycle clones into. */}
                 <span
                   ref={imageCycleRef}
                   className="absolute left-1/2 top-1/2 h-full w-(--slot-w) -translate-x-1/2 -translate-y-1/2"

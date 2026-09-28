@@ -9,7 +9,74 @@ import {
   NavbarLogo,
   NavMenu,
 } from "../ui/resizable-navbar";
+import { useNavbarScrolled } from "../ui/navbar-scrolled-context";
 import { ScrambleLink } from "../ui/ScrambleLink";
+import { cn } from "../../lib/utils";
+
+function HeaderBar({
+  isMenuOpen,
+  toggle,
+}: {
+  isMenuOpen: boolean;
+  toggle: () => void;
+}) {
+  // Read here, not in Header: Header renders the provider, so it would only ever see the default.
+  const scrolled = useNavbarScrolled();
+
+  return (
+    <MobileNav
+      visible={scrolled}
+      // Both heights are stated: `auto` would be the same number but cannot be eased towards, so the row would jump while everything else glided.
+      className={cn("relative flex", scrolled ? "h-17" : "h-23 py-4 lg:py-6")}
+    >
+      <NavbarLogo />
+
+      {/* Figma 722:4206: the condensed row is logo + two controls only; hidden, not unmounted, so crossing the threshold never rebuilds it. */}
+      <div
+        className={cn(
+          "absolute left-[27.5%] top-5.5 lg:flex flex-col font-accent text-sm xl:text-base uppercase leading-[1.2] text-primary/70 hidden",
+          scrolled && "lg:hidden",
+        )}
+      >
+        <a
+          href={`mailto:${profile.email}`}
+          className="transition-colors hover:text-accent"
+        >
+          {profile.email}
+        </a>
+        <a
+          href={`tel:${profile.phone.replace(/\s+/g, "")}`}
+          className="transition-colors hover:text-accent"
+        >
+          {profile.phone}
+        </a>
+      </div>
+
+      <span
+        className={cn(
+          "absolute left-1/2 top-5.5 lg:flex items-center gap-1 font-accent text-sm xl:text-base uppercase leading-[1.2] text-primary/70 hidden",
+          scrolled && "lg:hidden",
+        )}
+      >
+        <span
+          aria-hidden="true"
+          className="h-2 w-2 rounded-full bg-[#38A86A]"
+        />
+        {profile.status}
+      </span>
+
+      <div className="flex h-11 items-stretch gap-2">
+        <MobileNavToggle isOpen={isMenuOpen} onClick={toggle} />
+        <a
+          href={`mailto:${profile.email}`}
+          className="lg:flex h-11 w-37.5 items-center justify-center bg-secondary px-4 font-accent text-base uppercase leading-[1.2] text-primary transition-colors hover:bg-accent hidden"
+        >
+          Get in touch
+        </a>
+      </div>
+    </MobileNav>
+  );
+}
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -20,42 +87,7 @@ export function Header() {
   return (
     <header className="relative w-full">
       <Navbar>
-        <MobileNav className="relative h-23 w-full py-4 lg:py-6 flex">
-          <NavbarLogo className="" />
-
-          <div className="absolute left-[27.5%] top-5.5 lg:flex flex-col font-accent text-sm xl:text-base uppercase leading-[1.2] text-primary/70 hidden">
-            <a
-              href={`mailto:${profile.email}`}
-              className="transition-colors hover:text-accent"
-            >
-              {profile.email}
-            </a>
-            <a
-              href={`tel:${profile.phone.replace(/\s+/g, "")}`}
-              className="transition-colors hover:text-accent"
-            >
-              {profile.phone}
-            </a>
-          </div>
-
-          <span className="absolute left-1/2 top-5.5 lg:flex items-center gap-1 font-accent text-sm xl:text-base uppercase leading-[1.2] text-primary/70 hidden">
-            <span
-              aria-hidden="true"
-              className="h-2 w-2 rounded-full bg-[#38A86A]"
-            />
-            {profile.status}
-          </span>
-
-          <div className="flex h-11 items-stretch gap-2">
-            <MobileNavToggle isOpen={isMenuOpen} onClick={toggle} />
-            <a
-              href={`mailto:${profile.email}`}
-              className="lg:flex h-11 w-37.5 items-center justify-center bg-secondary px-4 font-accent text-base uppercase leading-[1.2] text-primary transition-colors hover:bg-accent hidden"
-            >
-              Get in touch
-            </a>
-          </div>
-        </MobileNav>
+        <HeaderBar isMenuOpen={isMenuOpen} toggle={toggle} />
 
         <NavMenu isOpen={isMenuOpen} onClose={close}>
           <div className="flex w-full items-center justify-between">
@@ -144,5 +176,3 @@ export function Header() {
     </header>
   );
 }
-
-

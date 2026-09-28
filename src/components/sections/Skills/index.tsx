@@ -13,9 +13,7 @@ interface QuickSetters {
   y: ReturnType<typeof gsap.quickTo>;
 }
 
-// Per-row cursor-follow preview, one image per skill (its own `url`).
-// Follows GreenSock's "show cursor image on hover" pattern:
-// https://codepen.io/GreenSock/pen/PwqrzeG
+// Per-row cursor-follow preview, one image per skill, after GreenSock's "show cursor image on hover" pattern: https://codepen.io/GreenSock/pen/PwqrzeG
 export function Skills() {
   const [activeIndex, setActiveIndex] = useState(FEATURED_SKILL_INDEX);
   const containerRef = useRef<HTMLDivElement>(null);

@@ -6,8 +6,7 @@ import { useRef } from "react";
 
 gsap.registerPlugin(MorphSVGPlugin, useGSAP);
 
-// Order in which the visible #morph path cycles through shapes.
-// Paste the full `d` attribute for each shape from the CodePen source.
+// Order the visible #morph path cycles through; paste each shape's full `d` from the CodePen source.
 const SHAPES = [
   { id: "speech", d: "M20,1 85,1 85,66 51,98 51,66 20,66z" },
   {

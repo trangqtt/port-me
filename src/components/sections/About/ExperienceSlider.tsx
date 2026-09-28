@@ -15,17 +15,7 @@ interface ExperienceSliderProps {
 // Header-row height (px) left peeking above the next card as it stacks over it.
 const MOBILE_CARD_PEEK = 164;
 
-// The two pictures always tile the frame along its diagonal, meeting at a
-// single point that slides up it as you scroll. The current one is pinned to
-// the frame's top-left and its opposite corner is the meeting point; the next
-// one starts at that same meeting point and is pinned to the frame's
-// bottom-right. Their other two corners just follow.
-//
-// Tiling exactly is what forces the arithmetic: the two scales have to sum to
-// 1 at every scroll position, which leaves `1 - |offset|` as the only shape
-// the pair can take. It also makes the handover continuous — the picture
-// arriving reaches scale 1 at the same instant the one leaving reaches 0, so
-// there is no moment where a size has to jump.
+// The two pictures tile the frame along its diagonal, so their scales must sum to 1: `1 - |offset|` is the only shape, and the handover is continuous.
 const ORIGIN_CURRENT = "0% 0%";
 const ORIGIN_NEXT = "100% 100%";
 
@@ -34,22 +24,20 @@ const WHEEL_PER_SLIDE = 700;
 // Clicking a dot is the one move with no scroll behind it to scrub from.
 const JUMP_DURATION = 0.7;
 
-// How close the section's top has to be to the viewport's before the strip
-// takes the scroll. Lenis's mandatory snap parks it at exactly 0, so this only
-// has to absorb sub-pixel rounding and a fast wheel overshooting the landing.
+// How near the section top must be to the viewport top before the strip takes scroll; snap parks it at 0, so this only absorbs rounding and wheel overshoot.
 const ENGAGE_EPSILON = 120;
 
-// Pure, and total: every picture has a defined size at every scroll position,
-// so an interrupted scroll, a reversal and a rebuild all resolve to the same
-// frame. Scrolling back up is this same function read with a smaller number.
+// Progress this close to an end counts as being at it, so a float residue left by a scrub cannot read as "a slide still to play" and re-lock the section it just released.
+const SETTLE_EPSILON = 0.01;
+
+// Pure and total: every picture has a size at every scroll position, so interruptions, reversals and rebuilds resolve to the same frame.
 const frameStateAt = (offset: number) => {
   if (offset >= 1 || offset <= -1) {
     return { scale: 0, transformOrigin: ORIGIN_NEXT, autoAlpha: 0 };
   }
   return {
     scale: 1 - Math.abs(offset),
-    // Ahead of the current slide it grows out of the bottom-right corner;
-    // behind it, it shrinks into the top-left. Same diagonal, two halves.
+    // Ahead of the current slide it grows from the bottom-right corner; behind, it shrinks into the top-left.
     transformOrigin: offset > 0 ? ORIGIN_NEXT : ORIGIN_CURRENT,
     autoAlpha: 1,
   };
@@ -59,9 +47,7 @@ export function ExperienceSlider({ items }: ExperienceSliderProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const imageFrameRefs = useRef<(HTMLDivElement | null)[]>([]);
-  // The real position. `activeIndex` is only the rounded shadow of it, kept in
-  // state because the copy, the dots and the stacking order are the parts that
-  // do need a re-render; the pictures are written straight to the DOM.
+  // The real position; `activeIndex` is its rounded shadow in state because only copy, dots and stacking need a re-render.
   const progressRef = useRef(0);
   const jumpRef = useRef<gsap.core.Tween | null>(null);
   const lenis = useLenis();
@@ -106,22 +92,18 @@ export function ExperienceSlider({ items }: ExperienceSliderProps) {
     { scope: containerRef },
   );
 
-  // Entering the section hands the page's scroll to the strip and holds it
-  // until the strip runs out in the direction of travel. Lenis is stopped
-  // rather than a ScrollTrigger pin being used: a pin would need the section
-  // to grow by its own scroll distance, and the mandatory snap on
-  // `main > section` would spend that whole distance trying to pull the page
-  // to the next section's start. Stopping Lenis suspends the snap with it.
+  // Entering hands page scroll to the strip until it runs out; Lenis is stopped instead of a ScrollTrigger pin because the mandatory snap would fight a pin's extra scroll distance.
   useEffect(() => {
     const container = containerRef.current;
     const section = container?.closest("section");
     if (!lenis || !container || !section) return;
-    // The strip itself only exists from `lg` up; below that the section is a
-    // stack of cards that must stay scrollable.
+    // The strip only exists from `lg` up; below that the section is a scrollable stack of cards.
     if (!window.matchMedia("(min-width: 1024px)").matches) return;
 
     const last = items.length - 1;
     let locked = false;
+    // Direction is derived, not read from `lenis.direction`, which is `1 | -1 | 0`; the zero makes a "not down" test true while standing still, so a settling scroll at the end of the strip takes the upward branch and re-locks.
+    let lastScroll = lenis.scroll;
 
     const onLockedWheel = (event: WheelEvent) => {
       event.preventDefault();
@@ -135,8 +117,7 @@ export function ExperienceSlider({ items }: ExperienceSliderProps) {
       renderFrames(next);
       setActiveIndex(Math.round(next));
 
-      // Released only at the end the wheel is pushing towards, so arriving at
-      // slide 3 from above does not also release upwards on the same gesture.
+      // Released only at the end the wheel pushes towards, so arriving at slide 3 from above does not also release upwards.
       if (
         (event.deltaY > 0 && next >= last) ||
         (event.deltaY < 0 && next <= 0)
@@ -149,6 +130,7 @@ export function ExperienceSlider({ items }: ExperienceSliderProps) {
       if (!locked) return;
       locked = false;
       window.removeEventListener("wheel", onLockedWheel);
+      lastScroll = lenis?.scroll ?? lastScroll;
       lenis?.start();
     }
 
@@ -156,21 +138,31 @@ export function ExperienceSlider({ items }: ExperienceSliderProps) {
       if (locked) return;
       locked = true;
       lenis.stop();
-      // Park the section against the top, so the strip is framed identically
-      // whichever direction it was entered from.
-      window.scrollBy(0, section.getBoundingClientRect().top);
+      // Park the section at the top via Lenis, not window.scrollBy, so Lenis's own scroll position never disagrees and jumps on restart.
+      lenis.scrollTo(section as HTMLElement, { immediate: true, force: true });
+      // The park is a jump the next delta must not be measured against.
+      lastScroll = lenis.scroll;
       window.addEventListener("wheel", onLockedWheel, { passive: false });
     };
 
     const onScroll = () => {
+      const previous = lastScroll;
+      lastScroll = lenis.scroll;
       if (locked) return;
-      const { top } = section.getBoundingClientRect();
-      if (Math.abs(top) > ENGAGE_EPSILON) return;
+
+      const delta = lastScroll - previous;
+      if (delta === 0) return;
+      if (Math.abs(section.getBoundingClientRect().top) > ENGAGE_EPSILON)
+        return;
 
       const progress = progressRef.current;
-      // Coming down with slides left, or back up with slides behind — either
-      // way there is something for the strip to do, so it takes the scroll.
-      if (top <= 0 ? progress < last : progress > 0) engage();
+
+      // Down: held until the strip is played out. Up: held only while there is strip left behind it, so at the first slide the page is free to carry on to the hero.
+      if (
+        delta > 0 ? progress < last - SETTLE_EPSILON : progress > SETTLE_EPSILON
+      ) {
+        engage();
+      }
     };
 
     lenis.on("scroll", onScroll);
@@ -259,9 +251,7 @@ export function ExperienceSlider({ items }: ExperienceSliderProps) {
               aria-hidden={index !== activeIndex}
               className={cn(
                 "absolute inset-x-0 top-0 grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)_minmax(0,3.5fr)] 2xl:grid-cols-[minmax(0,1.1fr)_minmax(0,5.6fr)_minmax(0,6fr)] items-start gap-8",
-                // Stacking order, not visibility: the frames below are opaque
-                // and pixel-aligned, so the active slide covers them even with
-                // no JS to hide anything.
+                // Stacking order, not visibility: the frames below are opaque and pixel-aligned, so the active slide covers them without JS.
                 index === activeIndex
                   ? "z-2"
                   : index === activeIndex + 1
@@ -283,15 +273,7 @@ export function ExperienceSlider({ items }: ExperienceSliderProps) {
                 </p>
               </div>
 
-              {/* Deliberately outside the crossfade above: this picture is
-                  scaled, never faded.
-
-                  Two boxes, not one. The outer frame never moves and clips, so
-                  the arriving picture is physically unable to paint outside the
-                  picture's own bounds however the scale is measured. The inner
-                  layer is the only thing that scales, and it declares its own
-                  origin in CSS rather than taking one from GSAP, so the corner
-                  it grows from is set before any script measures a box. */}
+              {/* Outside the crossfade on purpose (scaled, never faded); the outer frame clips and never moves, only the inner layer scales, from an origin set in CSS before any script measures. */}
               <div className="relative aspect-536/582 w-full overflow-hidden">
                 <div
                   ref={(node) => {

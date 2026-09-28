@@ -1,14 +1,6 @@
 import { useSyncExternalStore } from "react";
 
-// The intro overlay ends on a full-screen #0e0803 panel, which is also the
-// hero's background — so the handover is not a transition between two things
-// but the hero revealing its own content underneath a colour that never
-// changed. That needs the hero to know when the overlay is finished.
-//
-// Module scope rather than context: the overlay finishes synchronously under
-// prefers-reduced-motion, before the hero has subscribed to anything, and a
-// plain event fired then would be sent to an empty room. A stored flag can
-// still be read late.
+// The overlay ends on the hero's own #0e0803, so the hero must know when it is done; a module flag, not context or an event, because under reduced motion it finishes before anyone subscribes.
 let introDone = false;
 const listeners = new Set<() => void>();
 

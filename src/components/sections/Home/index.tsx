@@ -23,11 +23,7 @@ export function Home() {
   const renderRef = useRef<HTMLVideoElement>(null);
   const introDone = useIntroDone();
 
-  // `autoPlay` is the attribute the browser honours before React ever runs,
-  // which is what keeps the loop going on the phones that refuse a scripted
-  // play(). Suppressing it therefore has to happen after the fact: pausing
-  // back to frame zero leaves exactly the poster on screen, so the plate is
-  // identical to the still hero it replaced.
+  // `autoPlay` keeps the loop going on phones that refuse a scripted play(), so reduced motion is applied after the fact by pausing at frame zero, which leaves the poster.
   useEffect(() => {
     const render = renderRef.current;
     if (!render) return;
@@ -49,11 +45,7 @@ export function Home() {
     };
   }, []);
 
-  // The blocks come in only once the intro is out of the way. They are hidden
-  // from here rather than from a class, so markup that never runs this — no
-  // JS, a thrown error — still renders a complete hero instead of a blank
-  // one. The overlay covers the screen while it happens, so the first paint
-  // is never seen.
+  // Blocks reveal only once the intro is done; hidden from JS rather than a class, so a no-JS or errored page still renders a complete hero.
   // useGSAP(
   //   () => {
   //     // Scoped explicitly: useGSAP's `scope` only reaches selector text passed
@@ -103,20 +95,12 @@ export function Home() {
   );
 
   return (
-    // Every child is absolute, so the section is exactly one viewport tall and
-    // the design's coordinates can be read straight off it. The header is
-    // `fixed`, so these offsets are measured from the top of the page the same
-    // way the Figma frame measures them. `isolate` keeps the render's blend
-    // from reaching past the section to whatever the page paints underneath.
+    // Every child is absolute, so the section is one viewport tall and Figma offsets read straight off it; `isolate` keeps the render's blend inside the section.
     <section
       ref={sectionRef}
       id="home"
       aria-label={`${profile.name} — home`}
-      // The paragraph and the photo below it are one right-hand column in the
-      // design, so the column is declared once here and both read from it.
-      // Stated as two independent offsets they drift: the text is anchored in
-      // px and the photo in %, so any width they happen to line up at is the
-      // only width they line up at.
+      // The paragraph and the photo share one right-hand column in the design, declared once here so px and % anchors cannot drift apart.
       style={
         {
           "--hero-col-right": "7.81%",
@@ -125,25 +109,18 @@ export function Home() {
       }
       className="relative isolate min-h-dvh w-full overflow-hidden bg-primary"
     >
-      {/* The cycle spawns its later frames as lazy clones a third of a second
-          apart, far too late to start fetching them then. React hoists these
-          to <head>, so they are warm by the time the first switch lands. */}
+      {/* Later cycle frames spawn as lazy clones too late to fetch; React hoists these preloads to <head> so they are warm by the first switch. */}
       {cycleImages.slice(1).map((src) => (
         <link key={src} rel="preload" as="image" href={src} />
       ))}
 
-      {/* The render is a near-black plate, and `difference` against the page's
-          own near-black is what dissolves its edges into the background while
-          leaving the lit figure. It is painted before everything else so the
-          blend only ever sees the section's background, never the copy. */}
+      {/* The render is a near-black plate; `difference` against the near-black page dissolves its edges, and it paints first so the blend never touches the copy. */}
       <div
         data-hero-reveal
         aria-hidden="true"
         className="pointer-events-none absolute bottom-0 left-[-40%] right-[-44.5%] top-[330px] mix-blend-difference lg:bottom-auto lg:left-[10%] lg:right-auto lg:top-[14.17%] lg:h-[90%] lg:w-[79.62%]"
       >
-        {/* The poster is the render's first frame, so the plate is already
-            blending correctly before a byte of video has decoded, and it is
-            what stays on screen when the loop is suppressed. */}
+        {/* The poster is the render's first frame, so the plate blends correctly before any video decodes and stays when the loop is suppressed. */}
         <video
           ref={renderRef}
           src="/videos/hero-3d.mp4"
@@ -157,18 +134,12 @@ export function Home() {
           preload="auto"
           disablePictureInPicture
           tabIndex={-1}
-          // `contain` on the phone, where the wrapper's negative insets make a
-          // box far wider than 16:9 — `cover` there matches the width and
-          // takes the crop out of the render's top and bottom. The empty
-          // bands contain leaves behind cost nothing to look at: the plate is
-          // blended with `difference` against a background of the same
-          // near-black, so an uncovered band resolves to that background.
+          // `contain` on the phone, where negative insets make a box far wider than 16:9; empty bands cost nothing since `difference` against the same near-black resolves to background.
           className="h-full w-full select-none object-contain lg:object-cover"
         />
       </div>
 
-      {/* Photo card. The design crops a 2:3 portrait to a squarer window
-          biased towards the head, which is what the object-position buys. */}
+      {/* Photo card: the design crops a 2:3 portrait to a squarer window biased towards the head, hence the object-position. */}
       <div
         ref={imageCycleRef}
         data-hero-reveal
@@ -176,8 +147,7 @@ export function Home() {
         aria-label={`${profile.name} — portrait`}
         className="absolute left-[4.33%] top-[108px] aspect-[202/221] w-[22.84%] overflow-hidden lg:left-[calc(100%-var(--hero-col-right)-var(--hero-col-w))] lg:right-auto lg:top-[49.17%] lg:w-[10.54%]"
       >
-        {/* Only the first frame is mounted; every switch after it is the
-            cycle's, spawned by the hook. */}
+        {/* Only the first frame is mounted; every later switch is spawned by the cycle hook. */}
         <img
           src={cycleImages[0]}
           alt=""
@@ -200,8 +170,7 @@ export function Home() {
         [→]
       </p>
 
-      {/* Stacked and right-aligned on the phone, a single slash-separated row
-          along the bottom on desktop — so the separators only exist there. */}
+      {/* Stacked and right-aligned on the phone, one slash-separated row along the bottom on desktop, so separators only exist there. */}
       <div
         data-hero-reveal
         className="absolute right-[4.33%] top-[155px] flex flex-col items-end font-accent text-sm uppercase leading-[1.2] text-primary/70 lg:bottom-[17.96%] lg:left-[4.17%] lg:right-auto lg:top-auto lg:flex-row lg:items-center lg:gap-2 lg:text-base"
@@ -228,8 +197,7 @@ export function Home() {
         ))}
       </div>
 
-      {/* The phone has no room for the header's contact button, so the design
-          moves that call to action under the paragraph instead. */}
+      {/* The phone has no room for the header's contact button, so the call to action moves under the paragraph. */}
       <div
         data-hero-reveal
         className="absolute left-4 top-60.25 flex w-(--hero-col-w) max-w-[calc(100%-2rem)] flex-col gap-2.5 font-accent text-sm uppercase leading-[1.2] lg:left-auto lg:right-(--hero-col-right) lg:top-[33.8%] lg:max-w-none lg:text-base"
@@ -246,8 +214,7 @@ export function Home() {
         </a>
       </div>
 
-      {/* Desktop says the name in Neue Montreal beside the render; the phone
-          says it in the wordmark below instead, so only one is ever mounted. */}
+      {/* Desktop says the name here in Neue Montreal; the phone says it in the wordmark below, so only one is ever mounted. */}
       <div
         data-hero-reveal
         className="absolute left-[3.7%] top-[33.8%] hidden flex-col font-display text-[4.167vw] leading-none tracking-[-0.02em] lg:flex"
@@ -280,17 +247,10 @@ export function Home() {
         <span aria-hidden="true">[→]</span>
       </div>
 
-      {/* A zero-height anchor on the bottom edge: the collage is laid out in
-          `em`, so one font-size governs the whole arrangement and the words
-          keep their overlaps at every width instead of drifting apart. The
-          cap freezes that scale once the viewport outgrows a phone. */}
+      {/* Zero-height anchor on the bottom edge: the collage is laid out in `em`, so one font-size keeps the words' overlaps at every width. */}
       <div
         aria-hidden="true"
-        // Sized purely in vw, with no ceiling: every offset below is stated in
-        // em, so the whole collage is one shape that scales off this one
-        // number and keeps spanning the width at any size. A px cap froze it
-        // at 481px while the block itself runs to 1024px, which left the
-        // wordmark stranded against the left of the wider screens in between.
+        // Sized purely in vw with no ceiling: every offset is in em, so the collage scales as one shape; a px cap stranded the wordmark left on mid-width screens.
         className="pointer-events-none absolute inset-x-0 bottom-0 font-wordmark text-[18.3vw] font-bold uppercase leading-none text-primary lg:hidden"
       >
         <span
@@ -314,9 +274,7 @@ export function Home() {
         <span data-hero-reveal className="absolute bottom-[0.5em] left-[3.5139em]">
           @01
         </span>
-        {/* Sits inside the collage on the phone and out on the left margin on
-            desktop, so the two year marks cannot be one element. Both are
-            decorative, which is what makes saying it twice free. */}
+        {/* Inside the collage on the phone, out on the left margin on desktop, so the two year marks cannot be one element; both are decorative. */}
         <span className="absolute bottom-[0.875em] left-[2.5em]">
           <span
             data-hero-reveal
@@ -327,9 +285,7 @@ export function Home() {
         </span>
       </div>
 
-      {/* Teko is condensed enough that the line stays just inside the viewport
-          at this size, so it needs no fitting. It hangs below the fold by a
-          fraction of its own size, exactly as the frame clips it. */}
+      {/* Teko is condensed enough to stay inside the viewport at this size, and it hangs below the fold exactly as the frame clips it. */}
       <p
         data-hero-reveal
         aria-hidden="true"

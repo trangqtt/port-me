@@ -22,8 +22,7 @@ export function pixelsSortedOutIn(
   const cos = Math.cos(angle);
   const sin = Math.sin(angle);
   const minorAxisScale = 2.2;
-  // Measure real pixel size so the ellipse keeps a true shape on any viewport
-  // aspect ratio (grid columns/rows alone distort on narrow mobile screens).
+  // Measure real pixel size so the ellipse keeps a true shape on any aspect ratio; grid counts alone distort on narrow screens.
   const rect = container.getBoundingClientRect();
   const cellWidth = rect.width / PIXEL_COLS;
   const cellHeight = rect.height / PIXEL_ROWS;

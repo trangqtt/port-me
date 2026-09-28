@@ -1,9 +1,6 @@
 @import "tailwindcss";
 
-/* ---------- Neue Montreal (display) -------------------------------------
- * Self-hosted from /public/fonts/NeueMontreal/. No italic files provided —
- * the browser synthesises oblique if `font-style: italic` is requested.
- * ------------------------------------------------------------------------ */
+/* Neue Montreal (display): self-hosted from /public/fonts/NeueMontreal/; no italic files, the browser synthesises oblique. */
 
 @font-face {
     font-family: "Neue Montreal";
@@ -62,9 +59,7 @@
     src: url("/fonts/NeueMontreal/NeueMontreal-BoldItalic.otf") format("opentype");
 }
 
-/* ---------- Space Mono (accent) ------------------------------------------
- * Self-hosted from /public/fonts/SpaceMono/. 2 weights × normal + italic.
- * ------------------------------------------------------------------------ */
+/* Space Mono (accent): self-hosted from /public/fonts/SpaceMono/, 2 weights × normal + italic. */
 
 @font-face {
     font-family: "Space Mono";
@@ -95,11 +90,7 @@
     src: url("/fonts/SpaceMono/SpaceMono-BoldItalic.ttf") format("truetype");
 }
 
-/* ---------- Teko (wordmark) -----------------------------------------------
- * Self-hosted from /public/fonts/Teko/ (SIL OFL, Google Fonts latin subset).
- * Only Bold is used, and only by the hero wordmark — the one place the design
- * calls for a condensed face.
- * ------------------------------------------------------------------------ */
+/* Teko (wordmark): self-hosted from /public/fonts/Teko/ (SIL OFL, latin subset); only Bold, only for the hero wordmark. */
 
 @font-face {
     font-family: "Teko";
