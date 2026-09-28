@@ -184,7 +184,7 @@ export function ExperienceSlider({ items }: ExperienceSliderProps) {
   };
 
   return (
-    <div className="flex flex-col lg:flex-row gap-0 md:gap-10 2xl:gap-28">
+    <div className="flex flex-col lg:min-h-0 lg:flex-1 lg:flex-row gap-0 md:gap-10 2xl:gap-28">
       <p className="font-accent text-sm uppercase leading-[1.2] text-primary/70">
         [Experience]
       </p>
@@ -242,7 +242,8 @@ export function ExperienceSlider({ items }: ExperienceSliderProps) {
         ref={containerRef}
         role="group"
         aria-label="Experience"
-        className="relative hidden h-[60dvh] w-[85dvw] overflow-hidden lg:block"
+        // Height comes from the space the section has left, not from a share of the viewport: a fixed dvh here plus the section's own fixed padding always added up to more than one screen.
+        className="relative hidden h-full w-[85dvw] overflow-hidden lg:block"
       >
         <ul>
           {items.map((item, index) => (
@@ -250,7 +251,7 @@ export function ExperienceSlider({ items }: ExperienceSliderProps) {
               key={`${item.company}-${index}`}
               aria-hidden={index !== activeIndex}
               className={cn(
-                "absolute inset-x-0 top-0 grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)_minmax(0,3.5fr)] 2xl:grid-cols-[minmax(0,1.1fr)_minmax(0,5.6fr)_minmax(0,6fr)] items-start gap-8",
+                "absolute inset-0 grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)_minmax(0,3.5fr)] 2xl:grid-cols-[minmax(0,1.1fr)_minmax(0,5.6fr)_minmax(0,6fr)] items-start gap-8",
                 // Stacking order, not visibility: the frames below are opaque and pixel-aligned, so the active slide covers them without JS.
                 index === activeIndex
                   ? "z-2"

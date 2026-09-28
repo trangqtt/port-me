@@ -126,17 +126,29 @@ export function Skills() {
     <section
       id="skills"
       aria-labelledby="skills-title"
-      className="relative min-h-dvh w-full overflow-hidden bg-primary px-5 py-16 lg:py-22 sm:px-8 lg:px-[4.48vw] lg:pb-20 2xl:pt-[17vh]"
+      className="relative min-h-dvh w-full overflow-hidden bg-primary px-5 py-16 sm:px-8 lg:px-[4.48vw] lg:pt-8 lg:pb-20"
     >
-      <header className="flex flex-col gap-1 lg:grid lg:grid-cols-4 lg:items-end">
-        <p className="font-accent text-sm uppercase leading-[1.2] text-primary/50 lg:text-base">
-          [My Skills]
-        </p>
+      {/* Figma 642:3717 / 642:3823 / 642:3996 are this header's three marks, and they are spaced rather than placed: on the 1920 frame the row is the table's own 1768 wide, so justify-between leaves 862px of slack in two 431px gaps, putting the wordmark at 615 — the 616 the file records. */}
+      <header className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between lg:gap-4">
+        {/* Paired on the phone, where a 9.9vw wordmark between them leaves room for neither; `contents` dissolves this wrapper at lg so all three become items of the one justified row. */}
+        <div className="flex items-start justify-between lg:contents">
+          <p className="font-accent text-sm uppercase leading-[1.2] text-primary/50 lg:text-base">
+            [My Skills]
+          </p>
+          <p
+            aria-hidden="true"
+            className="font-accent text-sm uppercase leading-[1.2] text-primary/70 lg:order-last lg:text-base"
+          >
+            @003
+          </p>
+        </div>
+
+        {/* 190px of Teko on a 1920 frame is 9.9vw, stated as vw so it keeps its share of the row and capped at the size it was drawn at. */}
         <h2
           id="skills-title"
-          className="font-display text-[26px] lg:text-5xl font-medium leading-[1.2] text-primary lg:col-span-2 lg:pl-12 2xl:text-[52px] lg:font-normal lg:leading-none"
+          className="font-wordmark text-[clamp(56px,9.9vw,190px)] font-bold uppercase leading-none text-primary/70"
         >
-          Skills
+          My Skills
         </h2>
       </header>
 
@@ -175,7 +187,7 @@ export function Skills() {
                     <span className="text-sm leading-none lg:text-base">
                       {skill.name}
                     </span>
-                    <span className="text-sm leading-[1.2] lg:col-start-4 lg:row-start-1 lg:text-base lg:leading-none">
+                    <span className="text-sm leading-[1.2] lg:col-start-4 lg:row-start-1 lg:text-right lg:text-base lg:leading-none">
                       {skill.description}
                     </span>
                   </span>
@@ -207,11 +219,12 @@ export function Skills() {
                   src={skill.url}
                   alt=""
                   aria-hidden="true"
-                  width={200}
-                  height={200}
+                  width={360}
+                  height={450}
                   loading="lazy"
                   decoding="async"
-                  className="pointer-events-none fixed left-0 top-0 z-30 hidden size-50 object-contain opacity-0 lg:block"
+                  // The tilt is the `rotate` property, not a transform: GSAP owns this element's transform for the cursor follow, so the two compose instead of overwriting each other.
+                  className="pointer-events-none fixed left-0 top-0 z-30 hidden aspect-[360/450] w-[min(22vw,360px)] rotate-[3.2deg] object-contain opacity-0 lg:block"
                 />
               </li>
             );
