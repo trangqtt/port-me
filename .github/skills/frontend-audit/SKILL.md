@@ -11,3 +11,4 @@ description: "Use when reviewing React components, auditing accessibility, perfo
 4. Make focused fixes.
 5. Run tests and the production build.
 6. Report fixed issues and remaining risks.
+7. Comment in really need, not >3 lines

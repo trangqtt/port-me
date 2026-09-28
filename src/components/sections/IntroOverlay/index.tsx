@@ -1,7 +1,10 @@
 import { useGSAP } from "@gsap/react";
 import { gsap } from "gsap";
 import { useLenis } from "lenis/react";
+import type { CSSProperties } from "react";
 import { useEffect, useRef, useState } from "react";
+import { useImageCycleRandom } from "../../../hooks/useImageCycleRandom";
+import { markIntroDone } from "../../../hooks/useIntroDone";
 import { useIsMobile } from "../../../hooks/useIsMobile";
 
 gsap.registerPlugin(useGSAP);
@@ -12,9 +15,11 @@ const DEFAULT_IMAGES = [
   "/images/intro-3.png",
 ] as const;
 
+// Seconds of cycling before the final panel arrives (~1 image every 0.34s).
+const CYCLE_HOLD = 1;
+
 // One block per letter so the word's overflow-hidden wrapper can mask a
-// staggered slide-up. Split a word at a time: a space would collapse to
-// nothing as a flex item.
+// staggered slide-up. Split per word: a space would collapse as a flex item.
 const splitWord = (word: string) =>
   Array.from(word).map((letter, index) => (
     <span
@@ -29,9 +34,8 @@ const splitWord = (word: string) =>
 export function IntroOverlay() {
   const [done, setDone] = useState(false);
   const lenis = useLenis();
-  // ReactLenis publishes its instance from an effect, so `lenis` is undefined
-  // on the first render. Reading it through a ref keeps it out of the useGSAP
-  // dependencies, which would otherwise rebuild the timeline mid-intro.
+  // `lenis` is undefined on the first render; via a ref it stays out of the
+  // useGSAP deps, which would otherwise rebuild the timeline mid-intro.
   const lenisRef = useRef(lenis);
   lenisRef.current = lenis;
   const isMobile = useIsMobile();
@@ -45,7 +49,10 @@ export function IntroOverlay() {
   const headingRef = useRef<HTMLHeadingElement>(null);
   const roleLabelRef = useRef<HTMLParagraphElement>(null);
   const slotFrameRef = useRef<HTMLSpanElement>(null);
-  const imageStackRef = useRef<HTMLSpanElement>(null);
+  const finalPanelRef = useRef<HTMLSpanElement>(null);
+  const imageLoopRef = useRef<gsap.core.Timeline | null>(null);
+  const { addImageCycleInfiniteSequence, cycleImages, imageCycleRef } =
+    useImageCycleRandom(DEFAULT_IMAGES);
 
   useEffect(() => {
     if (done) return;
@@ -81,6 +88,8 @@ export function IntroOverlay() {
       const finishIntro = () => {
         lenisRef.current?.scrollTo(0, { immediate: true, force: true });
         window.scrollTo(0, 0);
+        // Releases the hero, which has been holding its content hidden.
+        markIntroDone();
         setDone(true);
       };
 
@@ -90,7 +99,6 @@ export function IntroOverlay() {
       }
 
       const letters = root.querySelectorAll("[data-intro-letter]");
-      const photos = root.querySelectorAll("[data-intro-photo]");
 
       const timeline = gsap.timeline({
         defaults: { ease: "expo.inOut" },
@@ -100,18 +108,12 @@ export function IntroOverlay() {
       timeline
         .set(root, { autoAlpha: 1 })
         .set(growingImageRef.current, { xPercent: -50, yPercent: -50 })
+        .set(finalPanelRef.current, { scale: 0 })
         .set(roleLabelRef.current, { autoAlpha: 0, width: 0 });
 
-      // The label hangs off the heading instead of sharing its flex row, so
-      // the heading alone is what the page centres — that is what lets the
-      // full-bleed panel land dead centre later without measuring. The cost is
-      // that an open label sticks out to one side, so the group is centred by
-      // sliding the whole thing instead. Measured off the real boxes, so the
-      // stacked mobile layout (label below, nothing to offset) yields ~0.
       // The slot sits between two words of unequal width, so it is
-      // (Mai - Hoa) / 2 off the h1's centre — a constant, since the box grows
-      // symmetrically. Read late so a webfont swap can't bake in a stale
-      // number; the words still report geometry once autoAlpha hides them.
+      // (Mai - Hoa) / 2 off the h1's centre. Read late so a webfont swap
+      // can't bake in a stale number.
       const slotRecentre = () =>
         ((introEndRef.current?.getBoundingClientRect().width ?? 0) -
           (introStartRef.current?.getBoundingClientRect().width ?? 0)) /
@@ -122,8 +124,7 @@ export function IntroOverlay() {
         const heading = headingRef.current;
         const label = roleLabelRef.current;
         if (!heading || !label) return;
-        // The label is mid-collapse at width 0 here; borrow its natural width
-        // to measure. autoAlpha only hides it, so it still has geometry.
+        // The label is at width 0 here; borrow its natural width to measure.
         const previousWidth = label.style.width;
         label.style.width = "auto";
         const name = heading.getBoundingClientRect();
@@ -134,12 +135,9 @@ export function IntroOverlay() {
         groupShift = window.innerWidth / 2 - (left + right) / 2;
       };
 
-      // Step 1 — the name reveals behind its word masks. The label then opens
-      // beside it, the pair sliding into centre together; it holds, closes,
-      // and the name slides back to dead centre on its own. fromTo throughout,
-      // never from: `from` reads the element's current state as its end value,
-      // so any rebuilt timeline would capture a mid-flight transform and
-      // settle the letters off their baseline.
+      // Step 1 — the name reveals behind its word masks, then the label opens
+      // beside it and the pair slides into centre. fromTo throughout: on a
+      // rebuild `from` would read a mid-flight transform as its end value.
       timeline
         .fromTo(
           letters,
@@ -157,8 +155,7 @@ export function IntroOverlay() {
           { x: () => groupShift, duration: 0.8, ease: "expo.out" },
           "<",
         )
-        // Collapses back the way it opened, and the name reclaims the centre
-        // as it goes, so it is alone and centred before the slot appears.
+        // Collapses the way it opened; the name reclaims the centre as it goes.
         .to(
           roleLabelRef.current,
           { autoAlpha: 0, width: 0, duration: 0.5, ease: "expo.in" },
@@ -170,10 +167,8 @@ export function IntroOverlay() {
           "<",
         );
 
-      // Step 2 — only once the label is gone does the image arrive. A phone
-      // has no room to part a 430px slot between the words without shoving
-      // them off both edges, so there the name leaves first and the photo
-      // takes the space it vacated.
+      // Step 2 — the slot parts the words. A phone has no room for a 430px
+      // slot, so there the name leaves first and the photo takes its place.
       if (isMobile) {
         timeline
           .to(
@@ -181,8 +176,7 @@ export function IntroOverlay() {
             { autoAlpha: 0, duration: 0.5, ease: "power2.out" },
             ">",
           )
-          // The words keep their footprint while hidden, so the slot is still
-          // parked off-centre between them. Nudge it before it is ever seen.
+          // Hidden words keep their footprint; re-centre before it is seen.
           .set(growingImageRef.current, { x: slotRecentre })
           .fromTo(
             growingImageRef.current,
@@ -190,16 +184,14 @@ export function IntroOverlay() {
             { width: "100%", duration: 1.25 },
             ">",
           )
-          .addLabel("imageFlip", "-=0.05");
+          .addLabel("imageCycle", ">");
       } else {
         timeline
           .fromTo(
             imageBoxRef.current,
             { width: "0em" },
             {
-              // Open to exactly the frame's width, so the parting words leave
-              // the photo's own footprint behind. Read rather than restated,
-              // so the narrow-screen max-w is honoured too.
+              // Read, not restated, so the narrow-screen max-w is honoured.
               width: () =>
                 slotFrameRef.current?.getBoundingClientRect().width ?? 0,
               duration: 1.25,
@@ -224,44 +216,71 @@ export function IntroOverlay() {
             { x: "0.05em", duration: 1.25 },
             "<",
           )
-          .addLabel("imageFlip", "-=0.05");
+          .addLabel("imageCycle", ">");
       }
 
-      // Hard cuts, not crossfades: each cover is dropped in a single frame so
-      // the slot flips through the stack down to the black panel.
-      timeline.fromTo(
-        photos,
-        { autoAlpha: 1 },
-        { autoAlpha: 0, duration: 0.05, ease: "none", stagger: 0.5 },
-        "imageFlip",
-      );
-
-      // Step 3 — the black panel left behind by the flip takes the screen.
-      // Growing the box past the viewport shoves the name off both edges, and
-      // because the h1 is the only thing being centred the panel lands dead
-      // centre without measuring anything.
+      // The hero's cycle takes over on its own timeline: a repeat:-1 child
+      // would make the main timeline infinite and never reach the final panel.
       timeline
-        .to(
-          growingImageRef.current,
-          {
-            width: "100vw",
-            height: "100dvh",
-            x: slotRecentre,
-            duration: 2,
-          },
-          "imageFlip+=1.25",
-        )
-        .to(imageBoxRef.current, { width: "110vw", duration: 2 }, "<");
+        .add(() => {
+          imageLoopRef.current?.kill();
+          const loop = gsap.timeline();
+          addImageCycleInfiniteSequence(loop);
+          imageLoopRef.current = loop;
+        }, "imageCycle")
+        .addLabel("imageCycleEnd", `imageCycle+=${CYCLE_HOLD}`)
+        .add(() => {
+          imageLoopRef.current?.kill();
+          imageLoopRef.current = null;
+        }, "imageCycleEnd");
 
-      // Step 4 — the screen is solid black by now, so the overlay lifts off it
-      // and the page underneath fades up out of the dark.
+      // Nothing cuts the slot to black at imageCycleEnd: the last photo has to
+      // stay up, because the panel grows over it in full view below. Blacking
+      // the slot out first would play that growth as black on black.
+
+      // How far past scale 1 the panel has to go to fill the screen. Read
+      // late: the slot is min(430px, 55vw), so its size is viewport-dependent,
+      // and it is off the viewport centre by (Hoa - Mai) / 2 — the panel has
+      // to over-cover by twice that or it drags a bare edge behind it.
+      const panelCoverScale = () => {
+        const frame = slotFrameRef.current;
+        const rect = frame?.getBoundingClientRect();
+        if (!rect?.width || !rect.height) return 1;
+        const offset = Math.abs(slotRecentre());
+        return Math.max(
+          (window.innerWidth + 2 * offset) / rect.width,
+          window.innerHeight / rect.height,
+        );
+      };
+
+      // Step 3a — the panel arrives as one more card: scale 0 to exactly the
+      // photo's bounds, on the cycle's own spawn curve, so it reads as the
+      // last frame of the cycle rather than as a new element.
       timeline.to(
-        root,
-        { autoAlpha: 0, duration: 0.6, ease: "power2.out" },
-        ">+=0.2",
+        finalPanelRef.current,
+        { scale: 1, duration: 0.55, ease: "power3.out" },
+        "imageCycleEnd",
       );
 
-      return () => timeline.kill();
+      // Step 3b — the same box keeps going until it owns the screen.
+      timeline.to(
+        finalPanelRef.current,
+        { scale: panelCoverScale, duration: 1, ease: "expo.in" },
+        ">+=0.06",
+      );
+
+      // Step 4 — there is nothing left to animate. The full-screen panel is
+      // the hero's own background colour, so the overlay can simply be taken
+      // away: no fade, no wipe, nothing that would read as a second surface
+      // moving. A beat on the black, then `finishIntro` unmounts it and the
+      // hero reveals its content into the same colour.
+      timeline.to({}, { duration: 0.12 });
+
+      return () => {
+        imageLoopRef.current?.kill();
+        imageLoopRef.current = null;
+        timeline.kill();
+      };
     },
     { scope: rootRef, dependencies: [isMobile], revertOnUpdate: true },
   );
@@ -273,86 +292,112 @@ export function IntroOverlay() {
       ref={rootRef}
       className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-bg-secondary"
     >
-      {/* The h1 is the only centred element, so the slot inside it sits on the
-          viewport centre once the box grows past 100vw. The role label is
-          positioned off it rather than sharing a flex row, which would drag
-          that centre sideways; while the label is open the group is centred by
-          shifting this wrapper instead. */}
+      {/* The cycle spawns the later frames as lazy clones 0.34s apart, far
+          too late to start fetching them then. React hoists these to <head>,
+          so they are warm in cache by the time the first switch lands. */}
+      {cycleImages.slice(1).map((src) => (
+        <link key={src} rel="preload" as="image" href={src} />
+      ))}
+
+      {/* The h1 is the only centred element, so the slot lands on the viewport
+          centre once the box grows past 100vw. The label is positioned off it
+          rather than sharing the row, which would drag that centre sideways. */}
       <div
         ref={textGroupRef}
         className="relative flex items-center justify-center"
       >
+        {/* leading-[1.3] is the Figma value, and it is also what the masks
+            need: each word's overflow-hidden box is one line tall, so a line
+            shorter than the glyphs crops them at rest, and yPercent:100 then
+            fails to clear a glyph taller than the box hiding it. */}
         <h1
           ref={headingRef}
           aria-label="Mai Hoa"
-          className="flex items-center justify-center whitespace-nowrap font-display text-[clamp(64px,16vw,200px)] font-medium leading-[0.75]"
+          className="flex items-center justify-center whitespace-nowrap font-display text-[clamp(64px,16vw,200px)] font-medium leading-[1.3]"
         >
           <span
             ref={introStartRef}
             aria-hidden="true"
-            className="flex justify-end overflow-hidden px-[0.06em]"
+            className="relative z-10 flex justify-end overflow-hidden px-[0.06em]"
           >
             {splitWord("Mai")}
           </span>
 
-          {/* Zero-width flex item, so widening it pushes the words apart.
-              Everything inside is absolute, so the frame can stand taller than
-              the line without stretching it, and the clip's full-bleed growth
-              never reflows anything. */}
+          {/* Zero-width flex item, so widening it parts the words. Its
+              contents are absolute, so growth never reflows the line. */}
           <span
             ref={imageBoxRef}
             aria-hidden="true"
+            style={{ "--slot-w": "min(430px, 55vw)" } as CSSProperties}
             className="relative w-0 shrink-0 self-stretch"
           >
-            {/* The photo's own 430x500, so it is shown whole and unscaled.
-                max-w only bites on screens too narrow to hold it. */}
+            {/* The photo's own 430x500; the min() only bites on narrow
+                screens. Both dimensions are declared from one variable rather
+                than leaning on aspect-ratio: the clip below sizes itself with
+                a percentage height, and a percentage needs a containing block
+                whose height is definite. An aspect-ratio-derived height is not
+                reliably that, and when it falls back the clip collapses to
+                zero and the photo never appears. */}
             <span
               ref={slotFrameRef}
-              className="absolute left-1/2 top-1/2 aspect-430/500 w-107.5 max-w-[55vw] -translate-x-1/2 -translate-y-1/2"
+              className="absolute left-1/2 top-1/2 h-[calc(var(--slot-w)*500/430)] w-(--slot-w) -translate-x-1/2 -translate-y-1/2"
             >
               <span
                 ref={growingImageRef}
                 className="absolute left-1/2 top-1/2 h-full w-0 overflow-hidden"
               >
-                {/* Fills the clip at every size, so it still covers the
-                    viewport once the clip goes full-bleed. */}
-                <span className="pointer-events-none absolute inset-0 block bg-black" />
+                {/* Fills the clip, so it still covers a full-bleed one. Matches the
+                    page background, so the final full-bleed panel is seamless. */}
+                <span className="pointer-events-none absolute inset-0 block bg-primary" />
 
-                {/* Matches the frame's ratio, so the photo holds still at its
-                    true proportions while the clip opens over it — a reveal,
-                    not a squash, and nothing cropped. */}
+                {/* Matches the frame's ratio, so the clip reveals the photo
+                    instead of squashing it. Also the pool the cycle clones
+                    into: fading this span drops every card at once. */}
                 <span
-                  ref={imageStackRef}
-                  className="absolute left-1/2 top-1/2 aspect-430/500 h-full -translate-x-1/2 -translate-y-1/2"
+                  ref={imageCycleRef}
+                  className="absolute left-1/2 top-1/2 h-full w-(--slot-w) -translate-x-1/2 -translate-y-1/2"
                 >
-                  {/* Stacked front-to-back so cutting them in DOM order plays
-                      as a flip through the deck. Cut away one by one, they
-                      leave the black panel behind. */}
-                  {DEFAULT_IMAGES.map((src, index) => (
-                    <img
-                      key={src}
-                      src={src}
-                      alt=""
-                      aria-hidden="true"
-                      width={430}
-                      height={500}
-                      loading="eager"
-                      decoding="async"
-                      fetchPriority={index === 0 ? "high" : "auto"}
-                      data-intro-photo
-                      className="pointer-events-none absolute inset-0 h-full w-full select-none object-cover"
-                      style={{ zIndex: DEFAULT_IMAGES.length - index }}
-                    />
-                  ))}
+                  {/* Only the first frame is mounted. The width reveal is a
+                      reveal, not a switch — it should uncover one photo, and
+                      a stack of three here made the cycle's first tick clone
+                      that same first photo again, costing a visible beat.
+                      Every switch after the reveal is the hook's. */}
+                  <img
+                    src={cycleImages[0]}
+                    alt=""
+                    aria-hidden="true"
+                    width={430}
+                    height={500}
+                    loading="eager"
+                    decoding="async"
+                    fetchPriority="high"
+                    data-image-cycle-card
+                    className="pointer-events-none absolute inset-0 h-full w-full select-none object-cover"
+                  />
                 </span>
               </span>
             </span>
+
+            {/* Same box as the slot frame, so scale 1 lands on the photo's
+                bounds to the pixel — that is the beat the growth pauses on
+                before it takes the screen.
+
+                It sits beside the frame rather than inside it because the
+                frame's -translate-*-1/2 makes it a stacking context, which
+                would trap this z-20 in there and let the words' z-10 paint
+                over the panel all the way to fullscreen. Out here the z-20
+                is measured against the words directly. */}
+            <span
+              ref={finalPanelRef}
+              aria-hidden="true"
+              className="pointer-events-none absolute left-1/2 top-1/2 z-20 h-[calc(var(--slot-w)*500/430)] w-(--slot-w) -translate-x-1/2 -translate-y-1/2 bg-primary"
+            />
           </span>
 
           <span
             ref={introEndRef}
             aria-hidden="true"
-            className="flex justify-start overflow-hidden px-[0.06em]"
+            className="relative z-10 flex justify-start overflow-hidden px-[0.06em]"
           >
             {splitWord("Hoa")}
           </span>
@@ -360,7 +405,7 @@ export function IntroOverlay() {
 
         <p
           ref={roleLabelRef}
-          className="absolute right-0 top-full inline-block overflow-hidden whitespace-nowrap font-accent text-base uppercase leading-none text-primary/70 sm:bottom-0 sm:left-full sm:right-auto sm:top-auto sm:ml-3 sm:text-4xl"
+          className="absolute right-0 top-full inline-block overflow-hidden whitespace-nowrap font-accent text-base uppercase leading-[1.2] text-primary/70 sm:left-full sm:right-auto sm:top-1/2 sm:ml-3 sm:-translate-y-1/2 sm:text-[32px]"
         >
           [UIUX DESIGN]
         </p>

@@ -4,6 +4,11 @@ import { useMemo, useRef } from "react";
 const CYCLE_INTERVAL = 0.34;
 const POSITION_RANGE = 1;
 
+// How many cards stay in the DOM. The stack is what keeps whatever sits
+// behind the cycle covered while the newest card scales up over it, so it
+// has to be more than one even where the markup mounts a single frame.
+const LIVE_CARDS = 3;
+
 export function useImageCycleRandom(images: readonly string[]) {
   const imageCycleRef = useRef<HTMLDivElement>(null);
   const cycleImages = useMemo(() => [...images], [images]);
@@ -27,8 +32,9 @@ export function useImageCycleRandom(images: readonly string[]) {
     if (!container || !cards?.length) return;
 
     const template = cards[0] as HTMLImageElement;
-    const poolSize = cards.length;
-    let nextIndex = poolSize;
+    // Resume after the frames already on screen, so the first tick is a real
+    // switch rather than a clone of the one the reveal just uncovered.
+    let nextIndex = cards.length;
 
     const spawnNext = () => {
       const offset = cardOffsets[nextIndex % cardOffsets.length] ?? {
@@ -59,8 +65,11 @@ export function useImageCycleRandom(images: readonly string[]) {
       nextIndex += 1;
 
       const live = container.querySelectorAll("[data-image-cycle-card]");
-      if (live.length > poolSize) {
+      if (live.length > LIVE_CARDS) {
         const oldest = live[0] as HTMLElement;
+        // Drops out of the query straight away, so the next tick can't pick
+        // the same card again while this one is still fading.
+        oldest.removeAttribute("data-image-cycle-card");
         gsap.to(oldest, {
           autoAlpha: 0,
           scale: 0,

@@ -1,7 +1,9 @@
 import { useGSAP } from "@gsap/react";
 import { gsap } from "gsap";
 import { profile } from "../../../data/profile";
+import { useRef } from "react";
 import { useImageCycleRandom } from "../../../hooks/useImageCycleRandom";
+import { useIntroDone } from "../../../hooks/useIntroDone";
 import { ScrambleLink } from "../../ui/ScrambleLink";
 
 gsap.registerPlugin(useGSAP);
@@ -16,6 +18,47 @@ const HERO_IMAGES = [
 export function Home() {
   const { addImageCycleInfiniteSequence, cycleImages, imageCycleRef } =
     useImageCycleRandom(HERO_IMAGES);
+  const sectionRef = useRef<HTMLElement>(null);
+  const introDone = useIntroDone();
+
+  // The blocks come in only once the intro is out of the way. They are hidden
+  // from here rather than from a class, so markup that never runs this — no
+  // JS, a thrown error — still renders a complete hero instead of a blank
+  // one. The overlay covers the screen while it happens, so the first paint
+  // is never seen.
+  useGSAP(
+    () => {
+      // Scoped explicitly: useGSAP's `scope` only reaches selector text passed
+      // to gsap methods, not to toArray, which would otherwise search the
+      // whole document.
+      const blocks = gsap.utils.toArray<HTMLElement>(
+        "[data-hero-reveal]",
+        sectionRef.current,
+      );
+      if (!blocks.length) return;
+
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        gsap.set(blocks, { clearProps: "opacity,visibility,transform" });
+        return;
+      }
+
+      if (!introDone) {
+        gsap.set(blocks, { autoAlpha: 0, y: 28 });
+        return;
+      }
+
+      // Reads top-left to bottom-right in DOM order, so the stagger walks the
+      // hero the way it is read.
+      gsap.to(blocks, {
+        autoAlpha: 1,
+        y: 0,
+        duration: 0.9,
+        ease: "expo.out",
+        stagger: 0.09,
+      });
+    },
+    { scope: sectionRef, dependencies: [introDone] },
+  );
 
   useGSAP(
     () => {
@@ -33,13 +76,17 @@ export function Home() {
 
   return (
     <section
+      ref={sectionRef}
       id="home"
       aria-label={`${profile.name} — home`}
       className="relative w-full min-h-dvh overflow-hidden bg-primary px-5 pt-25 pb-20 sm:px-8 lg:px-[4.48vw] lg:pt-0 lg:pb-0"
     >
       <div className="relative z-10 flex flex-col gap-17 lg:block lg:aspect-1920/1080 lg:w-full min-h-screen">
         <div className="flex flex-col gap-4 lg:contents">
-          <div className="flex flex-col font-display leading-none lg:absolute lg:left-[56.25%] lg:top-[26.11%]">
+          <div
+            data-hero-reveal
+            className="flex flex-col font-display leading-none lg:absolute lg:left-[56.25%] lg:top-[26.11%]"
+          >
             <span className="text-[32px] font-medium text-primary md:text-6xl xl:text-[80px] lg:tracking-[-1.6px]">
               @{profile.name}
             </span>
@@ -47,7 +94,9 @@ export function Home() {
               {profile.role}
             </span>
           </div>
-          <p className="max-w-75 md:w-[25.5%] font-accent text-sm uppercase leading-[1.2] text-primary/70 lg:absolute md:left-0 xl:left-[4.01%] lg:top-[27.11%] 2xl:w-[15.57%] lg:max-w-none lg:text-base">
+          <p
+            data-hero-reveal
+            className="max-w-75 md:w-[25.5%] font-accent text-sm uppercase leading-[1.2] text-primary/70 lg:absolute md:left-0 xl:left-[4.01%] lg:top-[27.11%] 2xl:w-[15.57%] lg:max-w-none lg:text-base">
             Passionate about creating unforgettable and beautiful digital
             experiences.
           </p>
@@ -56,6 +105,7 @@ export function Home() {
         <div className="relative lg:contents">
           <div
             ref={imageCycleRef}
+            data-hero-reveal
             role="img"
             aria-label={`${profile.name} — portrait`}
             className="relative aspect-2/3 w-[calc(100%-40px)] lg:absolute lg:left-[calc(25%+45px)] lg:top-[26.39%] lg:h-[42.96%] lg:w-auto"
@@ -78,6 +128,7 @@ export function Home() {
           </div>
           <a
             href="#work"
+            data-hero-reveal
             aria-label="Explore work"
             className="absolute -bottom-8 right-0 flex size-25 items-center justify-center rounded-full bg-secondary text-center font-accent text-base uppercase leading-[1.2] text-primary transition-colors hover:bg-accent lg:top-auto lg:right-auto lg:left-[56.25%] lg:bottom-[30.19%] lg:size-37.5"
           >
@@ -93,7 +144,10 @@ export function Home() {
         </div>
 
         <div className="items-end gap-2 font-accent text-base uppercase text-primary/70 absolute left-0 right-0 bottom-0">
-          <div className="flex justify-between font-accent text-sm uppercase leading-[1.2] text-primary/70 lg:text-base">
+          <div
+            data-hero-reveal
+            className="flex justify-between font-accent text-sm uppercase leading-[1.2] text-primary/70 lg:text-base"
+          >
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
               {profile.socials.map((social, index) => (
                 <span key={social.label} className="flex items-center gap-2">
@@ -119,6 +173,7 @@ export function Home() {
           </div>
           <p
             aria-hidden="true"
+            data-hero-reveal
             className="pointer-events-none relative overflow-hidden whitespace-nowrap font-accent text-[clamp(3.25rem,20vw,11.9rem)] leading-none font-bold uppercase text-primary/50  lg:text-center lg:text-[clamp(6rem,9.9vw,11.875rem)]"
           >
             @01UIUXDesigner
