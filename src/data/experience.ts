@@ -6,28 +6,29 @@ export interface ExperienceItem {
   description: string;
 }
 
+// Ordered most recent first, which is the order the slider steps through.
 export const experience: readonly ExperienceItem[] = [
   {
-    company: "Bearplus",
+    company: "Tinh Van",
     role: "UI/UX Designer",
-    period: "11/2024 - Now",
-    image: "/images/about-experience-1.jpg",
+    period: "7/2026 - Now",
+    image: "/images/about-experience-tinhvan.jpg",
     description:
-      "Responsible for UI/UX design across diverse projects, including Agency, Dashboards, E-commerce, SaaS platforms, and Landing Pages.",
+      "Cross-platform UI/UX Designer driving end-to-end product design across Web, App, SaaS, and Game UI. Focused on intuitive UX optimization and scalable Design System architecture.",
   },
   {
     company: "Bearplus",
     role: "UI/UX Designer",
-    period: "11/2024 - Now",
-    image: "/images/about-experience-1.jpg",
+    period: "11/2024 - 7/2026",
+    image: "/images/about-experience-bearplus.jpg",
     description:
       "Responsible for UI/UX design across diverse projects, including Agency, Dashboards, E-commerce, SaaS platforms, and Landing Pages.",
   },
   {
-    company: "Bearplus",
+    company: "Physcode",
     role: "UI/UX Designer",
-    period: "11/2024 - Now",
-    image: "/images/about-experience-1.jpg",
+    period: "11/2024 - 7/2026",
+    image: "/images/about-experience-physcode.jpg",
     description:
       "Responsible for UI/UX design across diverse projects, including Agency, Dashboards, E-commerce, SaaS platforms, and Landing Pages.",
   },
