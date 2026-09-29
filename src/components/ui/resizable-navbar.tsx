@@ -153,7 +153,7 @@ export const MobileNav = ({ children, className, visible }: MobileNavProps) => {
     <motion.div
       className={cn(
         // Every property that changes between the two states is written in both as an interpolable value; `auto`, `none` and a missing height snap instead of easing.
-        "relative z-20 flex w-auto flex-row items-center justify-between bg-transparent px-4 backdrop-blur-[0px] transition-[margin,padding,height,border-radius,background-color,backdrop-filter] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] lg:px-8 xl:px-20",
+        "relative z-20 flex w-auto flex-row items-center justify-between bg-transparent px-4 backdrop-blur-[0px] transition-[margin,padding,height,border-radius,background-color,backdrop-filter] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] lg:px-8",
         // Figma 722:4206: the bar condenses into a centred 600px glass pill with a 2px separating blur; one margin centres, caps and gutters it, bottoming out at 16px.
         visible &&
           "mx-[max(1rem,calc(50vw-300px))] rounded-[4px] bg-white/5 p-3 backdrop-blur-[2px]",

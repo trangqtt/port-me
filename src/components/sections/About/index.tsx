@@ -7,7 +7,7 @@ export function About() {
     <section
       id="about"
       aria-label="About"
-      className="relative w-full min-h-dvh bg-primary px-5 sm:px-8 lg:h-dvh lg:px-[4.48vw] lg:pt-32 lg:pb-16"
+      className="relative w-full min-h-dvh bg-primary px-5 pt-20 sm:px-8 lg:h-dvh lg:px-[4.48vw] lg:pt-32 lg:pb-16"
     >
       {/* The section is exactly one viewport at lg and the slider takes whatever the heading leaves, rather than both declaring a fixed height and summing to more than the screen. */}
       <div className="flex flex-col gap-16 lg:h-full lg:gap-24">
