@@ -82,9 +82,15 @@ export function WhyChooseMe() {
         }
       };
 
+      // How far the world reaches above the band — the band is only the floor
+      // it settles on, the section is the room it falls through.
+      const headroom = () =>
+        Math.max(0, section.clientHeight - band.clientHeight);
+
       const step = (dt: number) => {
         const width = band.clientWidth;
         const height = band.clientHeight;
+        const ceiling = -headroom();
 
         for (const body of bodies) {
           body.vy += GRAVITY * dt;
@@ -101,8 +107,8 @@ export function WhyChooseMe() {
             body.vx = -Math.abs(body.vx) * WALL_BOUNCE;
           }
 
-          if (body.y - body.radius < 0) {
-            body.y = body.radius;
+          if (body.y - body.radius < ceiling) {
+            body.y = ceiling + body.radius;
             body.vy = Math.abs(body.vy) * WALL_BOUNCE;
           } else if (body.y + body.radius > height) {
             body.y = height - body.radius;
@@ -195,10 +201,11 @@ export function WhyChooseMe() {
               Math.max(radius, width - radius),
               lane + gsap.utils.random(-width * 0.04, width * 0.04),
             ),
-            // Staggered heights, so they arrive a few at a time and have room
-            // to roll apart rather than landing as one sheet.
+            // Released level with the top of the section and spread down a
+            // little, so they arrive in waves with room to roll apart rather
+            // than landing as one sheet.
             y: fromAbove
-              ? -radius - gsap.utils.random(0, height * 0.6)
+              ? -headroom() + radius + gsap.utils.random(0, headroom() * 0.35)
               : gsap.utils.random(radius, Math.max(radius, height - radius)),
             vx: 0,
             vy: 0,
@@ -213,6 +220,9 @@ export function WhyChooseMe() {
       };
 
       const onPointerDown = (event: PointerEvent) => {
+        // Nothing here wants the browser's own response to a press on an image
+        // or a run of text.
+        event.preventDefault();
         const rect = band.getBoundingClientRect();
         const pointerX = event.clientX - rect.left;
         const pointerY = event.clientY - rect.top;
@@ -240,10 +250,20 @@ export function WhyChooseMe() {
         start();
       };
 
+      // Only reacts to a real change of size. Unguarded, this fires on the
+      // layout that ScrollTrigger.refresh() itself forces, which calls refresh
+      // again — and every refresh is a chance to move the scroll position,
+      // which a mandatory snap then finishes by jumping to the next section.
+      let bandWidth = band.clientWidth;
+      let bandHeight = band.clientHeight;
+
       const resizeObserver = new ResizeObserver(() => {
         if (!hasDropped) return;
         const width = band.clientWidth;
         const height = band.clientHeight;
+        if (width === bandWidth && height === bandHeight) return;
+        bandWidth = width;
+        bandHeight = height;
         for (const body of bodies) {
           body.radius = body.el.offsetWidth / 2;
           body.mass = body.radius * body.radius;
@@ -317,7 +337,7 @@ export function WhyChooseMe() {
       ref={sectionRef}
       id="why-choose-me"
       aria-labelledby="why-choose-title"
-      className="relative flex min-h-dvh w-full flex-col overflow-hidden bg-secondary px-5 py-16 sm:px-8 lg:px-[4.48vw] lg:pb-0 lg:pt-[15vh]"
+      className="relative flex min-h-dvh w-full flex-col overflow-hidden bg-secondary px-4 pt-[9.5dvh] pb-[220px] sm:px-8 lg:px-[4.48vw] lg:pb-0 lg:pt-[15vh]"
     >
       <div className="relative z-20 flex flex-col gap-8 lg:grid lg:grid-cols-[minmax(18rem,1fr)_minmax(35rem,1.38fr)] lg:gap-[8vw]">
         <header className="flex flex-col gap-2 lg:gap-7.5">
@@ -336,9 +356,9 @@ export function WhyChooseMe() {
           {whyChooseMetrics.map((metric) => (
             <div
               key={metric.value}
-              className="flex min-h-32 flex-col gap-3.5 border-t border-line py-6 lg:min-h-0 lg:py-12"
+              className="flex flex-col gap-3 border-t border-line py-[2.5dvh] lg:gap-3.5 lg:py-12"
             >
-              <dt className="font-display text-[52px] leading-none text-primary lg:text-[80px]">
+              <dt className="font-display text-[clamp(34px,5.6dvh,52px)] leading-none text-primary lg:text-[80px]">
                 {metric.value}
               </dt>
               <dd className="max-w-42 font-accent text-[14px] uppercase leading-[1.2] text-primary/70 lg:max-w-60 lg:text-base">
@@ -353,7 +373,7 @@ export function WhyChooseMe() {
       <div
         ref={bandRef}
         aria-hidden="true"
-        className="pointer-events-none relative z-10 mt-14 h-[72vw] w-full sm:h-[52vw] lg:absolute lg:inset-x-[4.48vw] lg:bottom-0 lg:mt-0 lg:h-[44.6%] lg:w-auto"
+        className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-[min(400px,55dvh)] lg:inset-x-[4.48vw] lg:h-[44.6%]"
       >
         {whyChooseCollage.map((item, index) =>
           item.kind === "disc" ? (
