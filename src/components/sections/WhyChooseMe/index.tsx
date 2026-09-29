@@ -284,8 +284,9 @@ export function WhyChooseMe() {
       });
       resizeObserver.observe(band);
 
-      band.addEventListener("pointerdown", onPointerDown);
-
+      // Settled in one go and left alone: no drop, and no click either. The
+      // knock is a gravity simulation, so wiring it up here would hand back
+      // the motion this branch exists to avoid.
       if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
         hasDropped = true;
         build(false);
@@ -295,9 +296,10 @@ export function WhyChooseMe() {
         return () => {
           isActive = false;
           resizeObserver.disconnect();
-          band.removeEventListener("pointerdown", onPointerDown);
         };
       }
+
+      band.addEventListener("pointerdown", onPointerDown);
 
       const trigger = ScrollTrigger.create({
         trigger: section,
