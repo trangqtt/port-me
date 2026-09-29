@@ -10,9 +10,9 @@ import { useIsMobile } from "../../../hooks/useIsMobile";
 gsap.registerPlugin(useGSAP);
 
 const DEFAULT_IMAGES = [
-  "/images/intro-1.png",
-  "/images/intro-2.png",
-  "/images/intro-3.png",
+  "/images/intro-1.webp",
+  "/images/intro-2.webp",
+  "/images/intro-3.webp",
 ] as const;
 
 // Seconds of cycling before the final panel arrives (~1 image every 0.34s).
