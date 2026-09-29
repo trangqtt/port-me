@@ -61,14 +61,15 @@ export function Skills() {
             const number = String(index + 1).padStart(2, "0");
 
             return (
-              <li key={skill.name}>
-                <button
-                  type="button"
-                  onMouseEnter={() => setHoveredIndex(index)}
-                  onFocus={() => setHoveredIndex(index)}
-                  onBlur={() => setHoveredIndex(null)}
+              // Hover lives on the row itself. These were buttons, but nothing
+              // was wired to a click: a screen reader announced ten controls,
+              // a keyboard user could tab to each and press Enter, and nothing
+              // happened. The preview they reveal is decorative and marked
+              // aria-hidden, so there is no behaviour here to expose.
+              <li key={skill.name} onMouseEnter={() => setHoveredIndex(index)}>
+                <div
                   className={cn(
-                    "grid min-h-23 w-full grid-cols-[minmax(0,1fr)_60px] items-center gap-4 border-b border-line py-4 text-left font-accent uppercase transition-colors duration-300 focus-visible:-outline-offset-2 focus-visible:outline-2 focus-visible:outline-accent lg:min-h-[6vh] lg:grid-cols-[6.6rem_minmax(12rem,1fr)_7rem_minmax(20rem,1fr)] lg:gap-0 lg:px-0 2xl:py-6 lg:text-base",
+                    "grid min-h-23 w-full grid-cols-[minmax(0,1fr)_60px] items-center gap-4 border-b border-line py-4 text-left font-accent uppercase transition-colors duration-300 lg:min-h-[6vh] lg:grid-cols-[6.6rem_minmax(12rem,1fr)_7rem_minmax(20rem,1fr)] lg:gap-0 lg:px-0 2xl:py-6 lg:text-base",
                     isActive
                       ? "lg:bg-white lg:text-[#0d0d0d] lg:px-2"
                       : "text-primary",
@@ -100,17 +101,20 @@ export function Skills() {
                     [{skill.descriptionLabel}]
                   </span>
 
+                  {/* `object-contain`, because the art is 400x450 and this box
+                      is square: the default `fill` stretched every thumbnail.
+                      Its own 120px cut, not the 400px preview art. */}
                   <img
-                    src={skill.url}
+                    src={skill.thumbUrl}
                     alt=""
                     aria-hidden="true"
-                    width={60}
-                    height={60}
+                    width={120}
+                    height={120}
                     loading="lazy"
                     decoding="async"
-                    className="pointer-events-none size-15 justify-self-end lg:hidden"
+                    className="pointer-events-none size-15 justify-self-end object-contain lg:hidden"
                   />
-                </button>
+                </div>
               </li>
             );
           })}
@@ -123,11 +127,16 @@ export function Skills() {
           style={{
             right: NAME_COLUMN_END,
             // Centred on the active row. Every row is the same height, so its
-            // centre is a share of the table and needs no measuring: the CSS
-            // stays correct if rows are added or the row height changes.
-            top: `${((activeIndex + 0.5) / skills.length) * 100}%`,
+            // centre is a share of the table and needs no measuring.
+            //
+            // Carried on a transform rather than `top`: `top` is a layout
+            // property, so easing it reflowed the table on every frame for
+            // half a second each time the pointer moved to another row. This
+            // box is `inset-y-0`, so its own height is the table's height and
+            // a percentage of itself is a percentage of the table.
+            transform: `translateY(${((activeIndex + 0.5) / skills.length - 0.5) * 100}%)`,
           }}
-          className="pointer-events-none absolute z-20 hidden -translate-y-1/2 transition-[top] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] lg:block"
+          className="pointer-events-none absolute inset-y-0 z-20 hidden items-center transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] lg:flex"
         >
           <div className="relative aspect-[360/450] w-[min(22vw,360px)]">
             {skills.map((skill, index) => (
