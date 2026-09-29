@@ -2,7 +2,7 @@ import { ReactLenis } from "lenis/react";
 import { Footer } from "./components/common/Footer";
 import { Header } from "./components/common/Header";
 import { About } from "./components/sections/About";
-import { Expertise } from "./components/sections/Expertise";
+import { ExpertiseV2 } from "./components/sections/ExpertiseV2";
 import { Home } from "./components/sections/Home";
 import { Skills } from "./components/sections/Skills";
 import { WhyChooseMe } from "./components/sections/WhyChooseMe";
@@ -10,6 +10,9 @@ import { useLenisSnap } from "./hooks/useLenisSnap";
 import { IntroOverlay } from "./components/sections/IntroOverlay";
 
 function ScrollSnapSection() {
+  // The footer is a target again — landing on its start is right. What it
+  // must not do is snap while you are inside its pinned span, and the footer
+  // suspends snapping itself for exactly that stretch.
   useLenisSnap("main > section, footer");
   return null;
 }
@@ -30,11 +33,11 @@ export default function App() {
       <Header />
 
       <main>
-        {/* <IntroOverlay /> */}
+        <IntroOverlay />
         <Home />
         <About />
         <Skills />
-        <Expertise />
+        <ExpertiseV2 />
         <WhyChooseMe />
         <Footer />
       </main>

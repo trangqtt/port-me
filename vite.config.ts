@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
@@ -6,4 +7,8 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   plugins: [react(), tailwindcss()] as any,
+  test: {
+    environment: 'jsdom',
+    setupFiles: ['./tests/setup.ts'],
+  },
 })

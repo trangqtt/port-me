@@ -46,39 +46,39 @@ export function Home() {
   }, []);
 
   // Blocks reveal only once the intro is done; hidden from JS rather than a class, so a no-JS or errored page still renders a complete hero.
-  // useGSAP(
-  //   () => {
-  //     // Scoped explicitly: useGSAP's `scope` only reaches selector text passed
-  //     // to gsap methods, not to toArray, which would otherwise search the
-  //     // whole document.
-  //     const blocks = gsap.utils.toArray<HTMLElement>(
-  //       "[data-hero-reveal]",
-  //       sectionRef.current,
-  //     );
-  //     if (!blocks.length) return;
+  useGSAP(
+    () => {
+      // Scoped explicitly: useGSAP's `scope` only reaches selector text passed
+      // to gsap methods, not to toArray, which would otherwise search the
+      // whole document.
+      const blocks = gsap.utils.toArray<HTMLElement>(
+        "[data-hero-reveal]",
+        sectionRef.current,
+      );
+      if (!blocks.length) return;
 
-  //     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-  //       gsap.set(blocks, { clearProps: "opacity,visibility,transform" });
-  //       return;
-  //     }
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        gsap.set(blocks, { clearProps: "opacity,visibility,transform" });
+        return;
+      }
 
-  //     if (!introDone) {
-  //       gsap.set(blocks, { autoAlpha: 0, y: 28 });
-  //       return;
-  //     }
+      if (!introDone) {
+        gsap.set(blocks, { autoAlpha: 0, y: 28 });
+        return;
+      }
 
-  //     // Reads top-left to bottom-right in DOM order, so the stagger walks the
-  //     // hero the way it is read.
-  //     gsap.to(blocks, {
-  //       autoAlpha: 1,
-  //       y: 0,
-  //       duration: 0.9,
-  //       ease: "expo.out",
-  //       stagger: 0.09,
-  //     });
-  //   },
-  //   { scope: sectionRef, dependencies: [introDone] },
-  // );
+      // Reads top-left to bottom-right in DOM order, so the stagger walks the
+      // hero the way it is read.
+      gsap.to(blocks, {
+        autoAlpha: 1,
+        y: 0,
+        duration: 0.9,
+        ease: "expo.out",
+        stagger: 0.09,
+      });
+    },
+    { scope: sectionRef, dependencies: [introDone] },
+  );
 
   useGSAP(
     () => {

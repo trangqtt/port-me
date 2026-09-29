@@ -159,7 +159,7 @@ export function Footer() {
           // Figma 642:4209 sizes the render rather than bleeding it: 1439x915 on a
           // 1920x1080 frame, centred on 46.88% and dropped 385 from the top. Stated
           // as percentages so it keeps that share of the stage at any size.
-          className="pointer-events-none absolute left-[46.88%] top-[35.65%] -z-10 h-[84.72%] w-[74.95%] -translate-x-1/2 object-contain"
+          className="pointer-events-none absolute -bottom-[30%] left-[46.88%] -z-10 h-[84.72%] w-[120dvh] lg:w-[74.95%] -translate-x-1/2 object-contain lg:bottom-auto lg:top-[35.65%]"
         />
 
         <nav
