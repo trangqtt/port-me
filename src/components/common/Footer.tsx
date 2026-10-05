@@ -1,6 +1,14 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { navItems } from "../../data/navigation";
 import { profile } from "../../data/profile";
+
+const VIDEO_SRC = "/videos/footer-portrait.mp4";
+
+// How early the clip starts fetching, as a share of the viewport above the
+// footer. The footer is the last thing on a nine-screen page, so at 0 nobody
+// pays for it until they are nearly there; one screen of margin is enough for
+// it to buffer at reading speed without putting it on the initial load.
+const PRELOAD_MARGIN = "100% 0px";
 
 // How quickly the playhead closes on where the scroll says it should be. A
 // straight assignment makes every wheel tick a hard seek and the picture
@@ -27,6 +35,30 @@ export function Footer() {
   const footerRef = useRef<HTMLElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const wordmarkRef = useRef<HTMLDivElement>(null);
+  // Held back rather than given to the element on mount: with a `src` there,
+  // the clip is fetched during the first load no matter how far down it sits.
+  const [videoSrc, setVideoSrc] = useState<string | null>(null);
+
+  // Attaches the source a screen before the footer arrives, then stops
+  // watching — the scrub's own observer below is a separate, tighter one,
+  // because "close enough to start buffering" and "on screen and being
+  // scrubbed" are not the same moment.
+  useEffect(() => {
+    const footer = footerRef.current;
+    if (!footer || videoSrc) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        setVideoSrc(VIDEO_SRC);
+        observer.disconnect();
+      },
+      { rootMargin: PRELOAD_MARGIN },
+    );
+    observer.observe(footer);
+
+    return () => observer.disconnect();
+  }, [videoSrc]);
 
   // The footer's own progress through the viewport drives the playhead: 0 as
   // its top reaches the bottom of the screen, 1 once its bottom has left the
@@ -140,20 +172,21 @@ export function Footer() {
             footer's own background, which is painted outside this context.
 
             Scrubbed, not played: no autoplay and no loop, because the scroll
-            position is the transport. `preload="auto"` matters more than usual
-            — seeking into a range the browser has not buffered shows nothing,
-            and the whole point is that every scroll position has a frame. The
-            poster covers the wait. */}
+            position is the transport. Once the source is attached `auto` is
+            the right level — seeking into a range the browser has not buffered
+            shows nothing, and the whole point is that every scroll position has
+            a frame. Until then there is nothing to preload, and the poster
+            covers both waits. */}
         <video
           ref={videoRef}
-          src="/videos/footer-portrait.mp4"
-          poster="/images/footer-portrait.png"
+          src={videoSrc ?? undefined}
+          poster="/images/footer-portrait.webp"
           aria-hidden="true"
           width={600}
           height={382}
           muted
           playsInline
-          preload="auto"
+          preload={videoSrc ? "auto" : "none"}
           disablePictureInPicture
           tabIndex={-1}
           // Figma 642:4209 sizes the render rather than bleeding it: 1439x915 on a

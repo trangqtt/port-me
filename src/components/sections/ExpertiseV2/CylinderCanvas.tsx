@@ -1,42 +1,47 @@
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { useEffect, useRef, useState, type RefObject } from "react";
+import { useEffect, useRef, type RefObject } from "react";
 import type { Work3D } from "../../../data/works3d";
-import { cn } from "../../../lib/utils";
-import { createCylinderWorld, type CylinderWorld } from "./cylinderWorld";
+import { createCylinderWorld, type CylinderMode, type CylinderWorld } from "./cylinderWorld";
 
 gsap.registerPlugin(ScrollTrigger);
 
 interface CylinderCanvasProps {
   projects: readonly Work3D[];
-  /** The tall section whose scroll range drives the helix. */
+  /** The tall section whose scroll range drives the rows' travel and the spin's momentum. */
   triggerRef: RefObject<HTMLElement | null>;
+  mode: CylinderMode;
   onHover: (project: Work3D | null) => void;
+  onFront: (project: Work3D | null) => void;
   onOpen: (project: Work3D) => void;
-  /** Height in px of copy laid over the bottom of the stage; the platform is kept above it. */
-  bottomInset?: number;
+  onReady: () => void;
 }
 
 // Thin React shell: the scene lives in cylinderWorld and is fed the section's scroll progress by a scrubbed ScrollTrigger.
-export default function CylinderCanvas({ projects, triggerRef, onHover, onOpen, bottomInset = 0 }: CylinderCanvasProps) {
+export default function CylinderCanvas({ projects, triggerRef, mode, onHover, onFront, onOpen, onReady }: CylinderCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const worldRef = useRef<CylinderWorld | null>(null);
+  // The world outlives any one render, so the callbacks reach it through refs rather than re-creating the scene.
   const onHoverRef = useRef(onHover);
+  const onFrontRef = useRef(onFront);
   const onOpenRef = useRef(onOpen);
-  const bottomInsetRef = useRef(bottomInset);
-  const [revealed, setRevealed] = useState(false);
+  const onReadyRef = useRef(onReady);
+  const modeRef = useRef(mode);
   onHoverRef.current = onHover;
+  onFrontRef.current = onFront;
   onOpenRef.current = onOpen;
+  onReadyRef.current = onReady;
 
   useEffect(() => {
-    bottomInsetRef.current = bottomInset;
-    worldRef.current?.setBottomInset(bottomInset);
-  }, [bottomInset]);
+    modeRef.current = mode;
+    worldRef.current?.setMode(mode);
+  }, [mode]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     const trigger = triggerRef.current;
     if (!canvas) return;
+    // The stage's own background, so the depth fog and the clear colour match whatever the section is painted.
     const styles = getComputedStyle(document.documentElement);
     const background = styles.getPropertyValue("--color-bg-primary").trim() || "#0e0803";
     const world = createCylinderWorld({
@@ -44,12 +49,13 @@ export default function CylinderCanvas({ projects, triggerRef, onHover, onOpen, 
       projects,
       background,
       reducedMotion: window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+      mode: modeRef.current,
       onHover: (project) => onHoverRef.current(project),
+      onFront: (project) => onFrontRef.current(project),
       onOpen: (project) => onOpenRef.current(project),
-      onReady: () => setRevealed(true),
+      onReady: () => onReadyRef.current(),
     });
     worldRef.current = world;
-    world.setBottomInset(bottomInsetRef.current);
 
     const scrollTrigger = trigger
       ? ScrollTrigger.create({
@@ -69,14 +75,5 @@ export default function CylinderCanvas({ projects, triggerRef, onHover, onOpen, 
     };
   }, [projects, triggerRef]);
 
-  return (
-    <canvas
-      ref={canvasRef}
-      aria-hidden="true"
-      className={cn(
-        "absolute inset-0 block h-full w-full select-none transition-opacity duration-700 motion-reduce:transition-none",
-        revealed ? "opacity-100" : "opacity-0",
-      )}
-    />
-  );
+  return <canvas ref={canvasRef} aria-hidden="true" className="absolute inset-0 block h-full w-full select-none" />;
 }

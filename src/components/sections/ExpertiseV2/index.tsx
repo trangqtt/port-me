@@ -1,33 +1,39 @@
-import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, lazy, useCallback, useMemo, useRef, useState } from "react";
 import { profile } from "../../../data/profile";
 import { works3d, type Work3D } from "../../../data/works3d";
+import { cn } from "../../../lib/utils";
+import type { CylinderMode } from "./cylinderWorld";
 
 // Three.js only loads when this section mounts, so the main bundle does not carry it.
 const CylinderCanvas = lazy(() => import("./CylinderCanvas"));
 
-// Figma 1:417 "Work" copy over the helix from 424:2388. The section is three and a half viewports tall with a sticky stage that pins for the first two and a half: the helix rises into view over the first two viewports of scroll and flies out of the top over the next half, so the stage only scrolls away once every card has gone; the copy follows whichever card is under the pointer.
+// What this section borrows from k95.it: the glass pair behind the switch, and its 14px uppercase chrome at .5px
+// tracking. The stage keeps this site's own dark background and its own fonts — k95's electric blue is not carried over.
+const GLASS = "rgba(28, 28, 28, 0.1)";
+const GLASS_BORDER = "hsla(0, 0%, 100%, 0.2)";
+// k95's own switch curve and its pill geometry: a 5px track inset with a 4px gap between the two halves.
+const PILL_EASE = "transform 420ms cubic-bezier(0.22, 1, 0.36, 1)";
+
+const MODES: readonly { id: CylinderMode; label: string }[] = [
+  { id: "rings", label: "Rings" },
+  { id: "spiral", label: "Spiral" },
+];
+
+// Figma 1:417 "Work", restaged on k95.it's home UI: a full-bleed canvas of covers with the chrome floating over it —
+// the Rings/Spiral switch centred at the top, and a baseline row at the bottom carrying the active cover's label and
+// the "n / N selected works" count. The section is three and a half viewports tall with a sticky stage that pins for
+// the first two and a half: scrolling carries the cylinder's rows past and spins it as it goes, and the last stretch
+// fades it away so the stage only scrolls off an empty frame.
 export function ExpertiseV2() {
   const sectionRef = useRef<HTMLElement>(null);
-  const copyRef = useRef<HTMLDivElement>(null);
+  const [mode, setMode] = useState<CylinderMode>("rings");
   const [hovered, setHovered] = useState<Work3D | null>(null);
-  const [bottomInset, setBottomInset] = useState(0);
+  const [front, setFront] = useState<Work3D | null>(null);
+  const [revealed, setRevealed] = useState(false);
 
-  // Below lg the copy sits under the bowl, so its height plus the 20px gutter is handed to the scene, which lifts the platform above it. At lg the copy is off to the right and needs no room.
-  useEffect(() => {
-    const copy = copyRef.current;
-    if (!copy) return;
-    const desktop = window.matchMedia("(min-width: 1024px)");
-    const measure = () => setBottomInset(desktop.matches ? 0 : copy.offsetHeight + 20);
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(copy);
-    desktop.addEventListener("change", measure);
-    return () => {
-      observer.disconnect();
-      desktop.removeEventListener("change", measure);
-    };
-  }, []);
-  const active = hovered ?? works3d[0];
+  // The pointer wins; otherwise the label follows whichever cover is nearest the camera, as k95's does.
+  const active = hovered ?? front ?? works3d[0];
+  const position = useMemo(() => works3d.indexOf(active) + 1, [active]);
 
   const open = useCallback((work: Work3D) => {
     window.location.assign(work.href);
@@ -43,33 +49,69 @@ export function ExpertiseV2() {
     >
       <div className="sticky top-0 h-dvh w-full overflow-hidden">
         <Suspense fallback={null}>
-          <CylinderCanvas projects={works3d} triggerRef={sectionRef} onHover={setHovered} onOpen={open} bottomInset={bottomInset} />
+          <CylinderCanvas
+            projects={works3d}
+            triggerRef={sectionRef}
+            mode={mode}
+            onHover={setHovered}
+            onFront={setFront}
+            onOpen={open}
+            onReady={() => setRevealed(true)}
+          />
         </Suspense>
 
-        {/* Eyebrow and the active study's name, top left as in the frame. */}
-        <header className="pointer-events-none absolute left-5 top-[14vh] z-20 flex flex-col gap-4 sm:left-8 lg:left-[4.48vw] lg:top-[16vh] lg:gap-8">
-          <p className="flex items-center gap-5 font-accent text-sm uppercase leading-[1.2] text-primary/70 lg:gap-[21px] lg:text-base">
-            <span aria-hidden="true">[→]</span>
-            <span>Featured case studies</span>
-          </p>
-          <h2
-            id="expertise-v2-title"
-            aria-live="polite"
-            className="font-display text-[32px] leading-none text-primary sm:text-[40px] lg:text-[52px]"
-          >
-            {active.title}
-          </h2>
-        </header>
-
-        {/* Role and description: 20px off the bottom under the bowl on the phone, bottom right beside it from lg. */}
+        {/* The layout switch: a glass track with a sliding pill, centred 31px from the top of the stage. */}
         <div
-          ref={copyRef}
-          className="pointer-events-none absolute inset-x-5 bottom-5 z-20 flex flex-col items-start gap-6 sm:inset-x-8 lg:left-auto lg:right-[4.48vw] lg:bottom-[6vh] lg:w-[427px]"
+          className={cn(
+            "absolute left-1/2 top-[31px] z-20 flex -translate-x-1/2 gap-[4px] rounded-full border p-[5px] backdrop-blur-md",
+            revealed ? "opacity-100 delay-150 duration-700" : "pointer-events-none opacity-0 duration-[250ms]",
+            "transition-opacity ease-out",
+          )}
+          style={{ backgroundColor: GLASS, borderColor: GLASS_BORDER }}
         >
-          <div className="flex flex-col gap-4 font-accent text-sm uppercase leading-[1.2] lg:gap-[27px] lg:text-base">
-            <p className="text-primary">[ {active.role} ]</p>
-            <p className="text-primary/70">{active.description}</p>
-          </div>
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute bottom-[5px] left-[5px] top-[5px] w-[calc(50%-7px)] rounded-full bg-white/[0.12] motion-reduce:transition-none"
+            style={{
+              transition: PILL_EASE,
+              transform: mode === "spiral" ? "translateX(calc(100% + 4px))" : "translateX(0)",
+            }}
+          />
+          {MODES.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              aria-pressed={mode === item.id}
+              onClick={() => setMode(item.id)}
+              className={cn(
+                "relative z-[1] flex-1 cursor-pointer rounded-full bg-transparent px-4 py-[13px] text-[14px] uppercase leading-none tracking-[0.5px] transition-colors duration-200",
+                mode === item.id ? "text-white" : "text-white/55",
+              )}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+
+        {/* k95's home footer row: the active cover on the left, the count on the right, sharing one baseline. */}
+        <div
+          className={cn(
+            "pointer-events-none absolute inset-x-[30px] bottom-[30px] z-20 flex items-baseline justify-between gap-6",
+            "text-[14px] uppercase leading-[1.2] tracking-[0.5px] text-white",
+            "transition-opacity duration-700 ease-out motion-reduce:transition-none",
+            "md:inset-x-[40px] md:bottom-[40px] lg:inset-x-[58px] lg:bottom-[58px]",
+            revealed ? "opacity-100 delay-150" : "opacity-0",
+          )}
+        >
+          <h2 id="expertise-v2-title" className="font-display font-normal">
+            {active.title} — {active.category}
+          </h2>
+          <p className="shrink-0 text-white/55">
+            <span className="text-white">
+              {position} / {works3d.length}
+            </span>{" "}
+            selected works
+          </p>
         </div>
       </div>
 

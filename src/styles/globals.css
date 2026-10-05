@@ -7,56 +7,56 @@
     font-style: normal;
     font-weight: 300;
     font-display: swap;
-    src: url("/fonts/NeueMontreal/NeueMontreal-Light.otf") format("opentype");
+    src: url("/fonts/NeueMontreal/NeueMontreal-Light.woff2") format("woff2");
 }
 @font-face {
     font-family: "Neue Montreal";
     font-style: italic;
     font-weight: 300;
     font-display: swap;
-    src: url("/fonts/NeueMontreal/NeueMontreal-LightItalic.otf") format("opentype");
+    src: url("/fonts/NeueMontreal/NeueMontreal-LightItalic.woff2") format("woff2");
 }
 @font-face {
     font-family: "Neue Montreal";
     font-style: normal;
     font-weight: 400;
     font-display: swap;
-    src: url("/fonts/NeueMontreal/NeueMontreal-Regular.otf") format("opentype");
+    src: url("/fonts/NeueMontreal/NeueMontreal-Regular.woff2") format("woff2");
 }
 @font-face {
     font-family: "Neue Montreal";
     font-style: italic;
     font-weight: 400;
     font-display: swap;
-    src: url("/fonts/NeueMontreal/NeueMontreal-Italic.otf") format("opentype");
+    src: url("/fonts/NeueMontreal/NeueMontreal-Italic.woff2") format("woff2");
 }
 @font-face {
     font-family: "Neue Montreal";
     font-style: normal;
     font-weight: 500;
     font-display: swap;
-    src: url("/fonts/NeueMontreal/NeueMontreal-Medium.otf") format("opentype");
+    src: url("/fonts/NeueMontreal/NeueMontreal-Medium.woff2") format("woff2");
 }
 @font-face {
     font-family: "Neue Montreal";
     font-style: italic;
     font-weight: 500;
     font-display: swap;
-    src: url("/fonts/NeueMontreal/NeueMontreal-MediumItalic.otf") format("opentype");
+    src: url("/fonts/NeueMontreal/NeueMontreal-MediumItalic.woff2") format("woff2");
 }
 @font-face {
     font-family: "Neue Montreal";
     font-style: normal;
     font-weight: 700;
     font-display: swap;
-    src: url("/fonts/NeueMontreal/NeueMontreal-Bold.otf") format("opentype");
+    src: url("/fonts/NeueMontreal/NeueMontreal-Bold.woff2") format("woff2");
 }
 @font-face {
     font-family: "Neue Montreal";
     font-style: italic;
     font-weight: 700;
     font-display: swap;
-    src: url("/fonts/NeueMontreal/NeueMontreal-BoldItalic.otf") format("opentype");
+    src: url("/fonts/NeueMontreal/NeueMontreal-BoldItalic.woff2") format("woff2");
 }
 
 /* Space Mono (accent): self-hosted from /public/fonts/SpaceMono/, 2 weights × normal + italic. */
@@ -66,28 +66,28 @@
     font-style: normal;
     font-weight: 400;
     font-display: swap;
-    src: url("/fonts/SpaceMono/SpaceMono-Regular.ttf") format("truetype");
+    src: url("/fonts/SpaceMono/SpaceMono-Regular.woff2") format("woff2");
 }
 @font-face {
     font-family: "Space Mono";
     font-style: italic;
     font-weight: 400;
     font-display: swap;
-    src: url("/fonts/SpaceMono/SpaceMono-Italic.ttf") format("truetype");
+    src: url("/fonts/SpaceMono/SpaceMono-Italic.woff2") format("woff2");
 }
 @font-face {
     font-family: "Space Mono";
     font-style: normal;
     font-weight: 700;
     font-display: swap;
-    src: url("/fonts/SpaceMono/SpaceMono-Bold.ttf") format("truetype");
+    src: url("/fonts/SpaceMono/SpaceMono-Bold.woff2") format("woff2");
 }
 @font-face {
     font-family: "Space Mono";
     font-style: italic;
     font-weight: 700;
     font-display: swap;
-    src: url("/fonts/SpaceMono/SpaceMono-BoldItalic.ttf") format("truetype");
+    src: url("/fonts/SpaceMono/SpaceMono-BoldItalic.woff2") format("woff2");
 }
 
 /* Teko (wordmark): self-hosted from /public/fonts/Teko/ (SIL OFL, latin subset); only Bold, only for the hero wordmark. */

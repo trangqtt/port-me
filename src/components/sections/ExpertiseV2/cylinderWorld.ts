@@ -1,15 +1,12 @@
 import {
-  BufferGeometry,
-  CircleGeometry,
   Color,
   DoubleSide,
-  Float32BufferAttribute,
+  Group,
   MathUtils,
   Mesh,
   NoToneMapping,
   PerspectiveCamera,
   PlaneGeometry,
-  Quaternion,
   Raycaster,
   Scene,
   ShaderMaterial,
@@ -22,100 +19,111 @@ import {
 } from "three";
 import type { Work3D } from "../../../data/works3d";
 
+/** The two arrangements k95.it's home offers, named as its own switch names them. */
+export type CylinderMode = "rings" | "spiral";
+
 export interface CylinderWorldOptions {
   canvas: HTMLCanvasElement;
   projects: readonly Work3D[];
   background: string;
   reducedMotion: boolean;
+  mode: CylinderMode;
   onHover: (project: Work3D | null) => void;
+  /** The card currently dead centre, so the label can follow the turn when nothing is hovered. */
+  onFront: (project: Work3D | null) => void;
   onOpen: (project: Work3D) => void;
   onReady: () => void;
 }
 
 export interface CylinderWorld {
-  /** 0 at the top of the section, 1 at the bottom; the helix only moves when this does. */
+  /** 0 at the top of the section, 1 at the bottom. Drives the rows' vertical travel and feeds the spin its momentum. */
   setProgress: (progress: number) => void;
-  /** Pixels at the bottom of the canvas that copy occupies; the platform is lifted to sit above them. */
-  setBottomInset: (px: number) => void;
+  /** Switches arrangement; the cards travel to their new slots rather than jumping. */
+  setMode: (mode: CylinderMode) => void;
   destroy: () => void;
 }
 
 interface Layout {
   fov: number;
-  cameraY: number;
   cameraZ: number;
   radius: number;
   panelW: number;
   panelH: number;
-  pitch: number;
+  rowSpacing: number;
 }
 
 interface PanelData {
   project: Work3D;
-  theta: number;
-  baseY: number;
-  radiusScale: number;
-  sizeScale: number;
-  roll: number;
+  /** Angle on the stacked rings, and on the single helix; a switch tweens between the two. */
+  thetaRing: number;
+  thetaSpiral: number;
+  /** Height within the row that only the spiral uses, so a ring's cards climb as they come round. */
+  ySpiral: number;
   entranceDelay: number;
   entranceDone: boolean;
 }
 
-type Panel = Mesh<BufferGeometry, ShaderMaterial>;
+type Panel = Mesh<PlaneGeometry, ShaderMaterial>;
 
-// Figma 424:2388: a helix of curved cards on a cone that opens upward, over a lit platform. It starts sunk below the floor with only a few cards showing, and scrolling lifts it so the cards fly up and spread outward as they climb.
-const TURNS = 3;
-const PER_TURN = 9;
-// Cone radius at the floor and at the top, as multiples of the layout radius.
-const R_BOTTOM = 0.5;
-const R_TOP = 1.35;
-// Cards above the floor before any scroll, and how many turns of orbit a card makes per pitch of climb.
-const START_VISIBLE = 4;
-const SPIN_PER_PITCH = 0.4;
-// The scroll is split in two: the first BUILD_SHARE of it brings the whole helix into view, and the remainder, half a viewport, carries every card on up and out of the top of the frame before the section lets go. RISE_END is how far that exit goes, in multiples of the distance that filled the bowl.
-const BUILD_SHARE = 0.8;
-const RISE_END = 2.8;
-// Each card keeps a fixed random offset from its slot on the helix: angle in radians, height as a share of the pitch, radius and size as multipliers, roll in radians. Scroll still carries every card along the same line; the spacing just stops looking like a grid.
-const JITTER_THETA = 0.22;
-const JITTER_Y = 0.35;
-const JITTER_RADIUS = 0.12;
-const JITTER_SIZE = 0.22;
-const JITTER_ROLL = 0.08;
-// The avatar standing on the platform, and how tall it is in world units.
-const FIGURE_SRC = "/images/expertise-v2-figure.webp";
-const FIGURE_HEIGHT = 2.2;
-// Where the platform's centre lands on the canvas, in clip space: -1 is the bottom edge. The camera is aimed to put it there, so the bowl sits at the bottom of the section rather than floating mid-frame.
-const FLOOR_NDC_Y = -0.8;
-// The platform's glow spreads below its centre by about this much of the frame, so a lifted floor keeps that much clearance above the copy.
-const FLOOR_CLEARANCE = 0.3;
-const HOVER_LIFT = 1.06;
+// A port of k95.it's own ThreeCylinderScene (/_nuxt/Ds9T5XbZ.js): a standing cylinder of covers seen side-on, turning
+// about its vertical axis while the rows travel past and wrap. Its numbers are kept as they are there — the layout
+// table, 5 rows of 12, the 0.72 spiral radius, the 1.08 hover, the 0.92 momentum decay — so the motion matches.
+const ROWS = 5;
+const PER_ROW = 12;
+// Panel sizes in the layout table are all multiples of this.
+const PANEL_UNIT = 1.1;
+// The spiral pulls the cards in and scales them up to fill the room it frees; a narrow phone gets less of both.
+const SPIRAL_RADIUS = 0.72;
+const SPIRAL_SCALE = 1.26;
+const SPIRAL_SCALE_PHONE = 0.88;
+// The turn never stops: this is its speed in rad/s with no scrolling, which scroll momentum adds to.
+const IDLE_SPIN = 0.08;
+// Momentum per unit of vertical travel, and the share of it left after a second — k95's wheel adds .004 of spin per
+// .005 of travel, and decays what it has by .92 sixty times a second.
+const MOMENTUM_GAIN = 0.8;
+const MOMENTUM_DECAY = 0.92;
+const MOMENTUM_MAX = 2;
+// Pointing at a card slows the whole scene to this, so the cover you are reading nearly stops.
+const HOVER_TIME_SCALE = 0.3;
+const HOVER_SCALE = 1.08;
+// How far the rows travel over the section's scroll, in whole wraps of the cylinder.
+const TRAVEL_WRAPS = 1.5;
 const BEND_H_MAX = 0.25;
 const BEND_V_MAX = 0.15;
 const ENTRANCE_MS = 760;
 const ENTRANCE_DELAY_MS = 840;
 const ENTRANCE_JITTER_MS = 980;
 const READY_TIMEOUT_MS = 1600;
-const FLOOR_COLOR = "#3d7be0";
+// The last stretch of scroll fades the cylinder out, so the stage is empty by the time it unpins and scrolls away.
+// This is ours, not k95's: their canvas is a page of its own and never has to leave.
+const EXIT_START = 0.88;
 
 const PANEL_VERTEX = /* glsl */ `
   uniform float uBendH;
   uniform float uBendV;
+  uniform float uTime;
+  uniform float uPhase;
   varying vec2 vUv;
   varying float vViewZ;
-  varying float vWorldY;
 
   void main() {
     vUv = uv;
     vec3 pos = position;
+
     float xn = (uv.x - 0.5) * 2.0;
     float yn = (uv.y - 0.5) * 2.0;
+    // Parabolic arch: 1 at the centre, 0 at both edges.
     float archX = 1.0 - xn * xn;
     float archY = 1.0 - yn * yn;
+
     pos.z -= archX * uBendH;
     pos.z -= archY * uBendV;
-    vec4 worldPos = modelMatrix * vec4(pos, 1.0);
-    vWorldY = worldPos.y;
-    vec4 mvPos = viewMatrix * worldPos;
+
+    // Idle wave, each panel on its own phase.
+    pos.z += sin(uv.y * 6.283 + uTime * 0.55 + uPhase)
+           * sin(uv.x * 3.14 + uTime * 0.35 + uPhase * 1.3) * 0.016;
+
+    vec4 mvPos = modelViewMatrix * vec4(pos, 1.0);
     vViewZ = -mvPos.z;
     gl_Position = projectionMatrix * mvPos;
   }
@@ -124,17 +132,18 @@ const PANEL_VERTEX = /* glsl */ `
 const PANEL_FRAGMENT = /* glsl */ `
   uniform sampler2D uTexture;
   uniform float uOpacity;
+  uniform float uFade;
   uniform float uDepthNear;
   uniform float uDepthFar;
   uniform vec3 uDepthColor;
   uniform float uDepthStrength;
   uniform float uSourceAspect;
   uniform float uTargetAspect;
-  uniform float uFloorY;
   varying vec2 vUv;
   varying float vViewZ;
-  varying float vWorldY;
 
+  // k95 samples the panel straight, because its covers already match the panel's shape. Ours do not, so they are
+  // cover-fit instead of stretched.
   vec2 cover(vec2 uv) {
     if (uSourceAspect <= 0.0) return uv;
     vec2 result = uv;
@@ -147,105 +156,35 @@ const PANEL_FRAGMENT = /* glsl */ `
   }
 
   void main() {
-    // The near side of the ring is seen from behind; sampling mirrored there keeps its text readable.
-    vec2 uv = gl_FrontFacing ? vUv : vec2(1.0 - vUv.x, vUv.y);
-    vec4 col = texture2D(uTexture, cover(uv));
+    vec4 col = texture2D(uTexture, cover(vUv));
     float depthT = smoothstep(uDepthNear, uDepthFar, vViewZ);
     float luma = dot(col.rgb, vec3(0.2126, 0.7152, 0.0722));
     vec3 toned = mix(col.rgb, vec3(luma), depthT * 0.12);
     toned = mix(toned, uDepthColor, depthT * uDepthStrength);
-    float edge = smoothstep(uFloorY - 0.9, uFloorY + 0.3, vWorldY);
-    gl_FragColor = vec4(toned, col.a * uOpacity * edge);
+    gl_FragColor = vec4(toned, col.a * uOpacity * uFade);
     #include <colorspace_fragment>
   }
 `;
 
-const FLOOR_VERTEX = /* glsl */ `
-  varying vec2 vUv;
-  void main() {
-    vUv = uv;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-  }
-`;
-
-const FLOOR_FRAGMENT = /* glsl */ `
-  uniform vec3 uColor;
-  uniform float uOpacity;
-  varying vec2 vUv;
-  void main() {
-    float d = length(vUv - 0.5) * 2.0;
-    float core = 1.0 - smoothstep(0.0, 0.55, d);
-    float halo = 1.0 - smoothstep(0.25, 1.0, d);
-    vec3 col = mix(uColor, vec3(0.86, 0.93, 1.0), core * 0.75);
-    gl_FragColor = vec4(col, (core * 0.95 + halo * 0.5) * uOpacity);
-    #include <colorspace_fragment>
-  }
-`;
-
-const FIGURE_VERTEX = /* glsl */ `
-  varying vec2 vUv;
-  void main() {
-    vUv = uv;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-  }
-`;
-
-// The cutout ends at the waist, so its base is faded into the platform glow rather than shown as a hard edge.
-const FIGURE_FRAGMENT = /* glsl */ `
-  uniform sampler2D uTexture;
-  uniform float uOpacity;
-  varying vec2 vUv;
-  void main() {
-    vec4 col = texture2D(uTexture, vUv);
-    float base = smoothstep(0.0, 0.28, vUv.y);
-    gl_FragColor = vec4(col.rgb, col.a * base * uOpacity);
-    if (gl_FragColor.a < 0.01) discard;
-    #include <colorspace_fragment>
-  }
-`;
-
-// Camera sits well above the helix and looks down into it at about forty degrees, so the near turn reads large and low and the far turn small and high.
+// k95's own breakpoint table, verbatim. The camera only ever has a z: it looks straight at the cylinder's waist, which
+// is what makes this read as a wall of covers turning rather than a funnel seen from above.
 function layoutFor(width: number, height: number): Layout {
   const portrait = height > width;
-  if (width < 768 && portrait) {
-    return { fov: 60, cameraY: 9.5, cameraZ: 12.5, radius: 4, panelW: 1.45, panelH: 1.45, pitch: 3.2 };
+  const wide = { fov: 50, cameraZ: 13, radius: 7.8, panelW: 1.4 * PANEL_UNIT, panelH: 1.9 * PANEL_UNIT, rowSpacing: 7 };
+  if (width < 768 && !portrait) return wide;
+  if (width < 500) {
+    return { fov: 70, cameraZ: 7.5, radius: 4.5, panelW: 1 * PANEL_UNIT, panelH: 1.4 * PANEL_UNIT, rowSpacing: 5.5 };
+  }
+  if (width < 768) {
+    return { fov: 70, cameraZ: 9.5, radius: 4.6, panelW: 1 * PANEL_UNIT, panelH: 1.4 * PANEL_UNIT, rowSpacing: 3.8 };
+  }
+  if (width < 1024 && portrait) {
+    return { fov: 65, cameraZ: 9, radius: 5.5, panelW: 1 * PANEL_UNIT, panelH: 1.4 * PANEL_UNIT, rowSpacing: 6.5 };
   }
   if (width < 1024) {
-    return { fov: 48, cameraY: 10, cameraZ: 13.5, radius: 4.8, panelW: 1.7, panelH: 1.7, pitch: 3.2 };
+    return { fov: 60, cameraZ: 11, radius: 6.5, panelW: 1.2 * PANEL_UNIT, panelH: 1.6 * PANEL_UNIT, rowSpacing: 4 };
   }
-  return { fov: 40, cameraY: 11, cameraZ: 15, radius: 5.4, panelW: 1.9, panelH: 1.9, pitch: 3.4 };
-}
-
-// A plane wrapped onto the cylinder it sits on, so every card curves with the ring instead of cutting through it. Its face points at the axis, so the bend goes toward +z.
-function curvedPanelGeometry(width: number, height: number, bendRadius: number, segX = 24, segY = 8) {
-  const positions: number[] = [];
-  const uvs: number[] = [];
-  const indices: number[] = [];
-  for (let iy = 0; iy <= segY; iy++) {
-    const v = iy / segY;
-    const y = (v - 0.5) * height;
-    for (let ix = 0; ix <= segX; ix++) {
-      const u = ix / segX;
-      const angle = ((u - 0.5) * width) / bendRadius;
-      positions.push(Math.sin(angle) * bendRadius, y, (1 - Math.cos(angle)) * bendRadius);
-      uvs.push(u, v);
-    }
-  }
-  for (let iy = 0; iy < segY; iy++) {
-    for (let ix = 0; ix < segX; ix++) {
-      const a = iy * (segX + 1) + ix;
-      const b = a + 1;
-      const c = a + segX + 1;
-      const d = c + 1;
-      // Counter-clockwise seen from +z, so the face that points at the axis is the front face.
-      indices.push(a, b, c, b, d, c);
-    }
-  }
-  const geometry = new BufferGeometry();
-  geometry.setAttribute("position", new Float32BufferAttribute(positions, 3));
-  geometry.setAttribute("uv", new Float32BufferAttribute(uvs, 2));
-  geometry.setIndex(indices);
-  return geometry;
+  return wide;
 }
 
 function mulberry32(seed: number) {
@@ -270,14 +209,14 @@ function seededShuffle<T>(items: readonly T[], seed: number): T[] {
 }
 
 export function createCylinderWorld(options: CylinderWorldOptions): CylinderWorld {
-  const { canvas, projects, reducedMotion, onHover, onOpen, onReady } = options;
+  const { canvas, projects, reducedMotion, onHover, onFront, onOpen, onReady } = options;
   const host = canvas.parentElement ?? document.body;
   const touch = window.matchMedia("(hover: none)").matches;
   const background = new Color(options.background);
+  // The shader works in linear space and three converts on output, so the fog tint has to be linear too.
+  const fogColor = background.clone().convertSRGBToLinear();
 
   const scene = new Scene();
-  // The avatar is drawn in a second pass over a cleared depth buffer, so no card passing in front can ever cover her.
-  const overlay = new Scene();
   const camera = new PerspectiveCamera(50, 1, 0.1, 1000);
   const renderer = new WebGLRenderer({ canvas, antialias: !touch, alpha: false });
   renderer.setClearColor(background, 1);
@@ -291,19 +230,30 @@ export function createCylinderWorld(options: CylinderWorldOptions): CylinderWorl
   const textures = new Map<string, { texture: Texture; aspect: { value: number }; ready: Promise<void> }>();
 
   let layout = layoutFor(1, 1);
+  let rows: Group[] = [];
   let panels: Panel[] = [];
   let panelData = new Map<Panel, PanelData>();
-  let panelGeometry: BufferGeometry | null = null;
-  let floor: Mesh<CircleGeometry, ShaderMaterial> | null = null;
-  let figure: Mesh<PlaneGeometry, ShaderMaterial> | null = null;
+  let panelGeometry: PlaneGeometry | null = null;
   let seeds: number[] = [];
 
   let progress = 0;
-  let bottomInset = 0;
-  let rise = 0;
-  let risePrev = 0;
+  // Vertical travel: a target the scroll sets, an eased follower, and last frame's value to difference against.
+  let travelTarget = 0;
+  let travel = 0;
+  let travelPrev = 0;
+  let spin = 0;
+  let momentum = 0;
+  // Pointing at a card eases the whole scene down to HOVER_TIME_SCALE.
+  let timeScale = 1;
+  let timeTarget = 1;
+  let blend = options.mode === "spiral" ? 1 : 0;
+  let blendTarget = blend;
+  /** The scale every card carries, which the spiral grows. */
+  let modeScale = 1;
+  let elapsed = 0;
   let bendH = 0;
   let bendV = 0;
+  let mode: CylinderMode = options.mode;
   let last = performance.now();
   let rafId: number | null = null;
   let inView = true;
@@ -311,16 +261,12 @@ export function createCylinderWorld(options: CylinderWorldOptions): CylinderWorl
   let entering = false;
   let entranceStart = 0;
   let hovered: Panel | null = null;
+  let front: Panel | null = null;
   let pointerInside = false;
   let destroyed = false;
   let resizeTimer: number | null = null;
-  const tmpTarget = new Vector3();
-  const yAxis = new Vector3(0, 1, 0);
-  const xAxis = new Vector3(1, 0, 0);
-  const qSpin = new Quaternion();
-  const qTilt = new Quaternion();
-  const qRoll = new Quaternion();
-  const zAxis = new Vector3(0, 0, 1);
+  const tmpScale = new Vector3();
+  const tmpWorld = new Vector3();
 
   const loadTexture = (url: string) => {
     const cached = textures.get(url);
@@ -346,97 +292,40 @@ export function createCylinderWorld(options: CylinderWorldOptions): CylinderWorl
     return entry;
   };
 
-  const totalHeight = () => TURNS * layout.pitch;
-  const floorY = () => -totalHeight() / 2 - 0.15;
+  /** Height of one full wrap of the stack, which is also how far a row travels before it comes back. */
+  const wrapHeight = () => ROWS * layout.rowSpacing;
+  const travelLength = () => wrapHeight() * TRAVEL_WRAPS;
+  const phonePortrait = () => window.innerWidth < 768 && window.innerHeight > window.innerWidth;
 
-  const buildFloor = () => {
-    if (floor) {
-      scene.remove(floor);
-      floor.geometry.dispose();
-      floor.material.dispose();
+  const disposeRows = () => {
+    for (const row of rows) {
+      for (const child of row.children) (child as Panel).material.dispose();
+      scene.remove(row);
     }
-    const material = new ShaderMaterial({
-      uniforms: {
-        uColor: { value: new Color(FLOOR_COLOR) },
-        uOpacity: { value: revealed ? 1 : 0 },
-      },
-      vertexShader: FLOOR_VERTEX,
-      fragmentShader: FLOOR_FRAGMENT,
-      transparent: true,
-      depthWrite: false,
-    });
-    floor = new Mesh(new CircleGeometry(layout.radius * R_BOTTOM * 1.5, 72), material);
-    floor.rotation.x = -Math.PI / 2;
-    floor.position.y = floorY();
-    floor.renderOrder = -5;
-    scene.add(floor);
-  };
-
-  const buildFigure = () => {
-    if (figure) {
-      overlay.remove(figure);
-      figure.geometry.dispose();
-      figure.material.dispose();
-    }
-    const { texture, aspect } = loadTexture(FIGURE_SRC);
-    const material = new ShaderMaterial({
-      uniforms: {
-        uTexture: { value: texture },
-        uOpacity: { value: revealed ? 1 : 0 },
-      },
-      vertexShader: FIGURE_VERTEX,
-      fragmentShader: FIGURE_FRAGMENT,
-      transparent: true,
-      depthWrite: false,
-    });
-    // Width follows the picture's aspect once it has loaded; until then a square placeholder that is invisible anyway.
-    const width = aspect.value > 0 ? FIGURE_HEIGHT * aspect.value : FIGURE_HEIGHT;
-    figure = new Mesh(new PlaneGeometry(width, FIGURE_HEIGHT), material);
-    overlay.add(figure);
-    placeFigure();
-    void textures.get(FIGURE_SRC)?.ready.then(() => {
-      if (destroyed || !figure || aspect.value <= 0) return;
-      figure.geometry.dispose();
-      figure.geometry = new PlaneGeometry(FIGURE_HEIGHT * aspect.value, FIGURE_HEIGHT);
-    });
-  };
-
-  // The cutout faces the camera square on rather than standing vertical, so the downward view does not foreshorten her; her base still sits on the platform's centre.
-  const figureUp = new Vector3();
-  const placeFigure = () => {
-    if (!figure) return;
-    figure.quaternion.copy(camera.quaternion);
-    figureUp.set(0, 1, 0).applyQuaternion(camera.quaternion);
-    figure.position.set(0, floorY(), 0).addScaledVector(figureUp, FIGURE_HEIGHT / 2);
-  };
-
-  const disposePanels = () => {
-    for (const panel of panels) {
-      panel.material.dispose();
-      scene.remove(panel);
-    }
+    rows = [];
     panels = [];
     panelData = new Map();
     panelGeometry?.dispose();
     panelGeometry = null;
   };
 
-  const buildPanels = () => {
+  const buildRows = () => {
     if (!projects.length) return;
-    disposePanels();
-    if (seeds.length !== TURNS) {
-      seeds = Array.from({ length: TURNS }, () => (Math.random() * 4294967295) >>> 0);
+    disposeRows();
+    if (seeds.length !== ROWS) {
+      seeds = Array.from({ length: ROWS }, () => (Math.random() * 4294967295) >>> 0);
     }
-    const { panelW, panelH, radius, pitch } = layout;
-    panelGeometry = curvedPanelGeometry(panelW, panelH, radius);
-    const depthNear = layout.cameraZ * 0.58;
-    const depthFar = layout.cameraZ * 1.85;
-    const half = totalHeight() / 2;
+    const { panelW, panelH, cameraZ, rowSpacing } = layout;
+    panelGeometry = new PlaneGeometry(panelW, panelH, 12, 8);
+    const depthNear = cameraZ * 0.58;
+    const depthFar = cameraZ * 1.85;
     const startOpacity = revealed ? 1 : 0;
+    travelPrev = travel;
 
-    for (let r = 0; r < TURNS; r++) {
+    for (let r = 0; r < ROWS; r++) {
+      const row = new Group();
       const order = seededShuffle(projects, seeds[r]);
-      for (let s = 0; s < PER_TURN; s++) {
+      for (let s = 0; s < PER_ROW; s++) {
         const project = order[s % order.length];
         const { texture, aspect } = loadTexture(project.image);
         const material = new ShaderMaterial({
@@ -444,70 +333,59 @@ export function createCylinderWorld(options: CylinderWorldOptions): CylinderWorl
             uTexture: { value: texture },
             uBendH: { value: 0 },
             uBendV: { value: 0 },
+            uTime: { value: 0 },
+            uPhase: { value: Math.random() * Math.PI * 2 },
             uOpacity: { value: startOpacity },
+            uFade: { value: 1 },
             uDepthNear: { value: depthNear },
             uDepthFar: { value: depthFar },
-            uDepthColor: { value: background.clone() },
+            uDepthColor: { value: fogColor },
             uDepthStrength: { value: 0.22 },
             uSourceAspect: aspect,
             uTargetAspect: { value: panelW / panelH },
-            uFloorY: { value: floorY() },
           },
           vertexShader: PANEL_VERTEX,
           fragmentShader: PANEL_FRAGMENT,
           side: DoubleSide,
           transparent: true,
           depthWrite: true,
+          toneMapped: false,
         });
         const panel = new Mesh(panelGeometry, material) as Panel;
         panel.frustumCulled = false;
-        const index = r * PER_TURN + s;
-        const jitter = mulberry32(seeds[r] + s * 7919);
         panelData.set(panel, {
           project,
-          theta: (s / PER_TURN) * Math.PI * 2 + (jitter() * 2 - 1) * JITTER_THETA,
-          baseY: (index / PER_TURN) * pitch - half + (jitter() * 2 - 1) * JITTER_Y * pitch,
-          radiusScale: 1 + (jitter() * 2 - 1) * JITTER_RADIUS,
-          sizeScale: 1 + (jitter() * 2 - 1) * JITTER_SIZE,
-          roll: (jitter() * 2 - 1) * JITTER_ROLL,
+          // Neighbouring rows are offset half a slot, so the cards never stack into columns.
+          thetaRing: ((s + r * 0.5) / PER_ROW) * Math.PI * 2,
+          thetaSpiral: (s / PER_ROW) * Math.PI * 2,
+          ySpiral: (s / PER_ROW - 0.5) * rowSpacing,
           entranceDelay: ENTRANCE_DELAY_MS + Math.random() * ENTRANCE_JITTER_MS,
           entranceDone: revealed,
         });
+        row.add(panel);
         panels.push(panel);
-        scene.add(panel);
       }
+      row.position.y = r * rowSpacing - ((ROWS - 1) * rowSpacing) / 2;
+      rows.push(row);
+      scene.add(row);
     }
-    placeCards();
+    applyBlend(blend);
+    for (const panel of panels) panel.scale.setScalar(modeScale);
   };
 
-  // The helix climbs out of the floor as `rise` goes 0 to BUILD_SHARE, is fully in view there, and shoots on out of the top over the rest, orbiting as it goes; radius grows with height, so every card spreads outward as it flies up the cone.
-  const placeCards = () => {
-    const { radius, pitch } = layout;
-    const total = totalHeight();
-    const half = total / 2;
-    const startDrop = total - (START_VISIBLE / PER_TURN) * pitch;
-    const climb =
-      rise < BUILD_SHARE
-        ? rise / BUILD_SHARE
-        : 1 + ((rise - BUILD_SHARE) / (1 - BUILD_SHARE)) * (RISE_END - 1);
-    const lift = -startDrop * (1 - climb);
-    const spin = -((climb * startDrop) / pitch) * SPIN_PER_PITCH * Math.PI * 2;
-    // Cards face the axis, so leaning their tops away from it, out along the widening cone, is a negative tilt.
-    const tilt = -Math.atan((radius * (R_TOP - R_BOTTOM)) / total);
-    qTilt.setFromAxisAngle(xAxis, tilt);
+  // k95's own blend: the rings' angles slide to the spiral's, each card takes on the height that turns its row into a
+  // helix, the whole thing pulls in to 0.72 of its radius, and the cards grow to fill the room that frees.
+  function applyBlend(e: number) {
+    const radius = layout.radius * (1 + (SPIRAL_RADIUS - 1) * e);
+    modeScale = 1 + ((phonePortrait() ? SPIRAL_SCALE_PHONE : SPIRAL_SCALE) - 1) * e;
     for (const panel of panels) {
       const data = panelData.get(panel)!;
-      const y = data.baseY + lift;
-      const h = MathUtils.clamp((y + half) / total, 0, 1);
-      const r = radius * (R_BOTTOM + (R_TOP - R_BOTTOM) * h) * data.radiusScale;
-      const theta = data.theta + spin;
-      panel.position.set(Math.cos(theta) * r, y, Math.sin(theta) * r);
-      // Faces the axis: the camera looks into the bowl, so the far side of the ring, which is most of what is seen, shows its front.
-      qSpin.setFromAxisAngle(yAxis, -(theta - Math.PI / 2) + Math.PI);
-      qRoll.setFromAxisAngle(zAxis, data.roll);
-      panel.quaternion.copy(qSpin).multiply(qTilt).multiply(qRoll);
+      const theta = data.thetaRing + (data.thetaSpiral - data.thetaRing) * e;
+      panel.position.set(Math.cos(theta) * radius, data.ySpiral * e, Math.sin(theta) * radius);
+      // Faces the axis, so the camera out at +z sees the front of the near side.
+      panel.rotation.y = -(theta - Math.PI / 2);
     }
-  };
+  }
 
   const applySize = () => {
     const width = host.clientWidth || 1;
@@ -515,24 +393,11 @@ export function createCylinderWorld(options: CylinderWorldOptions): CylinderWorl
     layout = layoutFor(width, height);
     camera.fov = layout.fov;
     camera.aspect = width / height;
-    camera.position.set(0, layout.cameraY, layout.cameraZ);
-    // Aim so the floor projects at FLOOR_NDC_Y, or higher when copy sits under it: the angle down to the floor, less the angle that clip-space height subtends inside the field of view.
-    const floorNdc = Math.max(FLOOR_NDC_Y, -1 + (2 * bottomInset) / height + FLOOR_CLEARANCE);
-    const toFloor = Math.atan((layout.cameraY - floorY()) / layout.cameraZ);
-    const halfFov = (layout.fov * Math.PI) / 360;
-    const below = Math.atan(-floorNdc * Math.tan(halfFov));
-    const lookY = layout.cameraY - layout.cameraZ * Math.tan(toFloor - below);
-    camera.lookAt(0, lookY, 0);
-    placeFigure();
+    // Straight in front of the cylinder's waist: no height, no tilt, no look-at.
+    camera.position.set(0, 0, layout.cameraZ);
+    camera.rotation.set(0, 0, 0);
     camera.updateProjectionMatrix();
     renderer.setSize(width, height, false);
-  };
-
-  const rebuild = () => {
-    applySize();
-    buildFloor();
-    buildFigure();
-    buildPanels();
   };
 
   const startEntrance = () => {
@@ -540,8 +405,6 @@ export function createCylinderWorld(options: CylinderWorldOptions): CylinderWorl
     revealed = true;
     entering = !reducedMotion;
     entranceStart = performance.now();
-    if (floor) floor.material.uniforms.uOpacity.value = 1;
-    if (figure) figure.material.uniforms.uOpacity.value = 1;
     if (!entering) {
       for (const panel of panels) {
         panel.material.uniforms.uOpacity.value = 1;
@@ -553,12 +416,12 @@ export function createCylinderWorld(options: CylinderWorldOptions): CylinderWorl
 
   const stepEntrance = () => {
     if (!entering) return;
-    const elapsed = performance.now() - entranceStart;
+    const since = performance.now() - entranceStart;
     let done = true;
     for (const panel of panels) {
       const data = panelData.get(panel)!;
       if (data.entranceDone) continue;
-      const local = elapsed - data.entranceDelay;
+      const local = since - data.entranceDelay;
       if (local <= 0) {
         done = false;
         continue;
@@ -575,13 +438,39 @@ export function createCylinderWorld(options: CylinderWorldOptions): CylinderWorl
     if (next === hovered) return;
     hovered = next;
     canvas.style.cursor = next ? "pointer" : "";
+    timeTarget = next ? HOVER_TIME_SCALE : 1;
     onHover(next ? panelData.get(next)!.project : null);
+  };
+
+  const setFront = (next: Panel | null) => {
+    if (next === front) return;
+    front = next;
+    onFront(next ? panelData.get(next)!.project : null);
   };
 
   const pick = (): Panel | null => {
     raycaster.setFromCamera(pointerNdc, camera);
     const hits = raycaster.intersectObjects(panels, false);
     return hits.length ? (hits[0].object as Panel) : null;
+  };
+
+  /** The card closest to the point of the cylinder that faces the camera, which is the one the frame is showing. */
+  const findFront = (): Panel | null => {
+    const radius = layout.radius * (1 + (SPIRAL_RADIUS - 1) * blend);
+    let best: Panel | null = null;
+    let bestDistance = Infinity;
+    // The rows were just moved, so one tree update covers every panel; render's own call is then a no-op.
+    scene.updateMatrixWorld();
+    for (const panel of panels) {
+      tmpWorld.setFromMatrixPosition(panel.matrixWorld);
+      if (tmpWorld.z <= 0) continue;
+      const distance = Math.hypot(tmpWorld.x, tmpWorld.y, tmpWorld.z - radius);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        best = panel;
+      }
+    }
+    return best;
   };
 
   const tick = (now: number) => {
@@ -591,35 +480,52 @@ export function createCylinderWorld(options: CylinderWorldOptions): CylinderWorl
     last = now;
     stepEntrance();
 
-    // Scroll is the only driver: the climb eases toward the scrolled position and is still whenever the page is.
-    rise += (progress - rise) * (1 - Math.exp(-6 * dt));
-    if (Math.abs(progress - rise) < 1e-4) rise = progress;
-    const riseVel = dt > 0 ? (rise - risePrev) / dt : 0;
-    risePrev = rise;
-    bendH += (MathUtils.clamp(riseVel * 0.9, -BEND_H_MAX, BEND_H_MAX) - bendH) * 0.08;
-    bendV += (MathUtils.clamp(riseVel * 0.6, -BEND_V_MAX, BEND_V_MAX) - bendV) * 0.12;
-    // Settle to exact rest so a parked page renders identical frames instead of sub-pixel drift.
-    if (Math.abs(bendH) < 1e-4) bendH = 0;
-    if (Math.abs(bendV) < 1e-4) bendV = 0;
-    placeCards();
+    // Hovering eases the scene's own clock down, so everything but the entrance slows with it.
+    timeScale += (timeTarget - timeScale) * 0.1;
+    const n = dt * timeScale;
+    elapsed += dt;
 
-    const canHover = revealed && !entering && pointerInside && !touch;
-    setHovered(canHover ? pick() : null);
+    if (Math.abs(blendTarget - blend) > 1e-4) {
+      blend += (blendTarget - blend) * (1 - Math.exp(-3.2 * dt));
+      if (Math.abs(blendTarget - blend) <= 1e-4) blend = blendTarget;
+      applyBlend(blend);
+    }
+
+    travel += (travelTarget - travel) * 0.1;
+    const step = travel - travelPrev;
+    travelPrev = travel;
+
+    momentum *= Math.pow(MOMENTUM_DECAY, n * 60);
+    spin += (IDLE_SPIN + momentum) * n;
+    bendH += (MathUtils.clamp(momentum * 0.1, -BEND_H_MAX, BEND_H_MAX) - bendH) * 0.08;
+    bendV += (MathUtils.clamp(step * 8, -BEND_V_MAX, BEND_V_MAX) - bendV) * 0.12;
+
+    // The rows slide past and wrap, so the stack never runs out however far the section is scrolled.
+    const wrap = wrapHeight();
+    for (const row of rows) {
+      row.position.y -= step;
+      if (row.position.y > wrap / 2 + layout.rowSpacing) row.position.y -= wrap;
+      if (row.position.y < -wrap / 2 - layout.rowSpacing) row.position.y += wrap;
+      row.rotation.y = spin;
+    }
+
+    const fade = 1 - MathUtils.clamp((progress - EXIT_START) / (1 - EXIT_START), 0, 1);
+    const live = revealed && !entering && fade > 0.5;
+    setHovered(live && pointerInside && !touch ? pick() : null);
+    setFront(live ? findFront() : null);
 
     const lerpT = 1 - Math.exp(-8 * dt);
     for (const panel of panels) {
-      tmpTarget.setScalar(panelData.get(panel)!.sizeScale * (hovered === panel ? HOVER_LIFT : 1));
-      if (panel.scale.distanceToSquared(tmpTarget) > 1e-5) panel.scale.lerp(tmpTarget, lerpT);
+      tmpScale.setScalar(modeScale * (hovered === panel ? HOVER_SCALE : 1));
+      if (panel.scale.distanceToSquared(tmpScale) > 1e-5) panel.scale.lerp(tmpScale, lerpT);
       const u = panel.material.uniforms;
       u.uBendH.value = bendH;
       u.uBendV.value = bendV;
+      u.uTime.value = elapsed;
+      u.uFade.value = fade;
     }
 
     renderer.render(scene, camera);
-    renderer.autoClear = false;
-    renderer.clearDepth();
-    renderer.render(overlay, camera);
-    renderer.autoClear = true;
     if (inView && !document.hidden) rafId = requestAnimationFrame(tick);
   };
 
@@ -666,9 +572,7 @@ export function createCylinderWorld(options: CylinderWorldOptions): CylinderWorl
     if (resizeTimer !== null) window.clearTimeout(resizeTimer);
     resizeTimer = window.setTimeout(() => {
       resizeTimer = null;
-      buildFloor();
-      buildFigure();
-      buildPanels();
+      buildRows();
     }, 200);
   });
   const intersectionObserver = new IntersectionObserver(([entry]) => {
@@ -684,26 +588,42 @@ export function createCylinderWorld(options: CylinderWorldOptions): CylinderWorl
   resizeObserver.observe(host);
   intersectionObserver.observe(canvas);
 
-  rebuild();
+  applySize();
+  buildRows();
   resume();
 
-  const firstUrls = [...new Set(projects.map((p) => p.image))].slice(0, touch ? 4 : 12);
+  const firstUrls = [...new Set(projects.map((p) => p.image))];
   const firstReady = Promise.allSettled(firstUrls.map((url) => loadTexture(url).ready));
   const cap = new Promise<void>((r) => setTimeout(r, READY_TIMEOUT_MS));
   void Promise.race([firstReady, cap]).then(() => startEntrance());
 
   return {
-    setBottomInset(px) {
-      if (px === bottomInset) return;
-      bottomInset = Math.max(0, px);
-      applySize();
-      resume();
-    },
     setProgress(next) {
       progress = MathUtils.clamp(next, 0, 1);
+      const previous = travelTarget;
+      // Scrolling down carries the rows upward, which is a falling target.
+      travelTarget = -progress * travelLength();
+      // What the wheel does on k95: the same gesture that moves the rows also spins the cylinder.
+      momentum = MathUtils.clamp(
+        momentum + (previous - travelTarget) * MOMENTUM_GAIN,
+        -MOMENTUM_MAX,
+        MOMENTUM_MAX,
+      );
       if (reducedMotion) {
-        rise = progress;
-        risePrev = rise;
+        travel = travelTarget;
+        travelPrev = travel;
+        momentum = 0;
+      }
+      resume();
+    },
+    setMode(next) {
+      if (next === mode) return;
+      mode = next;
+      blendTarget = next === "spiral" ? 1 : 0;
+      if (reducedMotion) {
+        blend = blendTarget;
+        applyBlend(blend);
+        for (const panel of panels) panel.scale.setScalar(modeScale);
       }
       resume();
     },
@@ -717,17 +637,7 @@ export function createCylinderWorld(options: CylinderWorldOptions): CylinderWorl
       document.removeEventListener("visibilitychange", onVisibility);
       resizeObserver.disconnect();
       intersectionObserver.disconnect();
-      disposePanels();
-      if (floor) {
-        scene.remove(floor);
-        floor.geometry.dispose();
-        floor.material.dispose();
-      }
-      if (figure) {
-        overlay.remove(figure);
-        figure.geometry.dispose();
-        figure.material.dispose();
-      }
+      disposeRows();
       for (const entry of textures.values()) entry.texture.dispose();
       textures.clear();
       renderer.dispose();

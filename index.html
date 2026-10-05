@@ -5,6 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#0e0803" />
 
+    <!-- The three faces the first screen actually asks for: the intro sets the
+         name in Neue Montreal Medium and its label in Space Mono, and the hero
+         behind it takes Neue Montreal Regular as the body default. Without
+         these the browser only discovers them after the stylesheet parses,
+         which is a round trip into the middle of the intro.
+         `crossorigin` is required even same-origin, or the preload is
+         discarded and the font fetched a second time. -->
+    <link rel="preload" as="font" type="font/woff2" crossorigin
+      href="/fonts/NeueMontreal/NeueMontreal-Medium.woff2" />
+    <link rel="preload" as="font" type="font/woff2" crossorigin
+      href="/fonts/NeueMontreal/NeueMontreal-Regular.woff2" />
+    <link rel="preload" as="font" type="font/woff2" crossorigin
+      href="/fonts/SpaceMono/SpaceMono-Regular.woff2" />
+
     <title>MaiHoa — UI/UX Designer</title>
     <meta
       name="description"

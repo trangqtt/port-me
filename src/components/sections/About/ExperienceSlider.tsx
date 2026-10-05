@@ -14,6 +14,8 @@ interface ExperienceSliderProps {
 
 // Header-row height (px) left peeking above the next card as it stacks over it.
 const MOBILE_CARD_PEEK = 164;
+// Room (px) the last card needs below the peeks, plus the scroll travel the stack plays out over. Added to one peek per card so the stack still resolves when an entry is added or removed.
+const MOBILE_STACK_TAIL = 608;
 
 // The two pictures tile the frame along its diagonal, so their scales must sum to 1: `1 - |offset|` is the only shape, and the handover is continuous.
 const ORIGIN_CURRENT = "0% 0%";
@@ -190,7 +192,12 @@ export function ExperienceSlider({ items }: ExperienceSliderProps) {
       </p>
 
       {/* Mobile Sticky Card Stack */}
-      <ul className="relative flex flex-col h-275 mb-45 lg:hidden">
+      <ul
+        className="relative flex flex-col mb-45 lg:hidden"
+        style={{
+          height: items.length * MOBILE_CARD_PEEK + MOBILE_STACK_TAIL,
+        }}
+      >
         {items.map((item, index) => (
           <li
             key={`${item.company}-${index}`}
