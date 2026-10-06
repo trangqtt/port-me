@@ -12,10 +12,19 @@ interface ExperienceSliderProps {
   items: readonly ExperienceItem[];
 }
 
-// Header-row height (px) left peeking above the next card as it stacks over it.
-const MOBILE_CARD_PEEK = 164;
+// What a stacked-over card still shows (px): its top padding (py-8) plus the company/role header row (text-xl line, gap-1, text-sm line). Deliberately no more than the header, because every card adds another one of these above the last card, and the whole pile has to clear a short phone.
+const MOBILE_CARD_PEEK = 32 + 28 + 4 + 20;
 // Room (px) the last card needs below the peeks, plus the scroll travel the stack plays out over. Added to one peek per card so the stack still resolves when an entry is added or removed.
-const MOBILE_STACK_TAIL = 608;
+const MOBILE_STACK_TAIL = 1158;
+// `h-full grid-rows-1` is what lets the picture be as tall as the group: the slide is `inset-0`, so its height is
+// definite, and a single 1fr row passes that height down for the picture's `h-full` to resolve against.
+const SLIDE_GRID =
+  "grid h-full grid-rows-1 grid-cols-[minmax(0,1fr)_minmax(0,2fr)_minmax(0,3.5fr)] 2xl:grid-cols-[minmax(0,1.1fr)_minmax(0,5.6fr)_minmax(0,6fr)] items-start gap-8";
+
+// The picture fills its cell in both directions. Figma's 536/582 is deliberately not kept here: a fixed ratio and a
+// height equal to the container's cannot both hold, and the container wins because the section is one viewport tall.
+// The picture still fills the box without distortion — the img is `object-cover`.
+const PICTURE_BOX = "h-full w-full";
 
 // The two pictures tile the frame along its diagonal, so their scales must sum to 1: `1 - |offset|` is the only shape, and the handover is continuous.
 const ORIGIN_CURRENT = "0% 0%";
@@ -249,7 +258,7 @@ export function ExperienceSlider({ items }: ExperienceSliderProps) {
         ref={containerRef}
         role="group"
         aria-label="Experience"
-        // Height comes from the space the section has left, not from a share of the viewport: a fixed dvh here plus the section's own fixed padding always added up to more than one screen.
+        // Height comes from the space the section has left, not from a share of the viewport: a fixed dvh here plus the section's own fixed padding always added up to more than one screen. The picture takes this same height.
         className="relative hidden h-full w-[85dvw] overflow-hidden lg:block"
       >
         <ul>
@@ -258,7 +267,8 @@ export function ExperienceSlider({ items }: ExperienceSliderProps) {
               key={`${item.company}-${index}`}
               aria-hidden={index !== activeIndex}
               className={cn(
-                "absolute inset-0 grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)_minmax(0,3.5fr)] 2xl:grid-cols-[minmax(0,1.1fr)_minmax(0,5.6fr)_minmax(0,6fr)] items-start gap-8",
+                "absolute inset-0",
+                SLIDE_GRID,
                 // Stacking order, not visibility: the frames below are opaque and pixel-aligned, so the active slide covers them without JS.
                 index === activeIndex
                   ? "z-2"
@@ -282,7 +292,7 @@ export function ExperienceSlider({ items }: ExperienceSliderProps) {
               </div>
 
               {/* Outside the crossfade on purpose (scaled, never faded); the outer frame clips and never moves, only the inner layer scales, from an origin set in CSS before any script measures. */}
-              <div className="relative aspect-536/582 w-full overflow-hidden">
+              <div className={cn("relative overflow-hidden", PICTURE_BOX)}>
                 <div
                   ref={(node) => {
                     imageFrameRefs.current[index] = node;

@@ -9,14 +9,6 @@ export interface ExperienceItem {
 // Ordered most recent first, which is the order the slider steps through.
 export const experience: readonly ExperienceItem[] = [
   {
-    company: "Freelancer",
-    role: "Game Designer",
-    period: "2026 - Now",
-    image: "/images/about-experience-freelancer.webp",
-    description:
-      "Gameplay & Level Design: Craft game rules, mechanics, levels, and balance. Partner with Developers and Artists to bring concepts to life.",
-  },
-  {
     company: "Bearplus",
     role: "UI/UX Designer",
     period: "11/2024 - Now",
@@ -39,5 +31,13 @@ export const experience: readonly ExperienceItem[] = [
     image: "/images/about-experience-global-liaison.webp",
     description:
       "Website design, landing page mainly focuses on beauty and nail salons for customers in the US. Utilized WordPress and Shopify to optimize SEO and page load speed, meeting international technical standards.",
+  },
+  {
+    company: "Freelancer",
+    role: "Game Designer",
+    period: "2026 - Now",
+    image: "/images/about-experience-freelancer.webp",
+    description:
+      "Gameplay & Level Design: Craft game rules, mechanics, levels, and balance. Partner with Developers and Artists to bring concepts to life.",
   },
 ] as const;

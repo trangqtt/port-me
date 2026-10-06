@@ -8,7 +8,8 @@ import { works3d } from "../../../src/data/works3d";
 // jsdom has no WebGL, so the lazy canvas is replaced with a component that only reports itself ready, which is what
 // reveals the chrome over the stage.
 vi.mock("../../../src/components/sections/ExpertiseV2/CylinderCanvas", () => ({
-  default: ({ onReady }: { onReady: () => void }) => {
+  // Named and capitalised so the hook inside reads as a component to eslint's rules-of-hooks.
+  default: function CylinderCanvasStub({ onReady }: { onReady: () => void }) {
     useEffect(() => onReady(), [onReady]);
     return null;
   },

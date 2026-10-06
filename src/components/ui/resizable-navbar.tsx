@@ -1,6 +1,7 @@
 "use client";
 import { useGSAP } from "@gsap/react";
 import { gsap } from "gsap";
+import { useLenis } from "lenis/react";
 import React, { useEffect, useRef, useState } from "react";
 import { cn } from "../../lib/utils";
 import { LoadingPathLoop } from "../Icon/LoadingPathLoop";
@@ -83,9 +84,12 @@ export const MobileNav = ({ children, className, visible }: MobileNavProps) => {
   );
 };
 
-export const NavMenu = ({ children, className, isOpen }: NavMenuProps) => {
+export const NavMenu = ({ children, className, isOpen, onClose }: NavMenuProps) => {
   const backdropRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  // Where focus was before the curtain took it, so closing can hand it back.
+  const returnFocusRef = useRef<HTMLElement | null>(null);
+  const lenis = useLenis();
   // Kept mounted across the closing animation. This is the one thing
   // AnimatePresence was doing that React does not: an element removed on the
   // same render as the state change has no chance to play its exit, so the
@@ -95,6 +99,36 @@ export const NavMenu = ({ children, className, isOpen }: NavMenuProps) => {
   useEffect(() => {
     if (isOpen) setMounted(true);
   }, [isOpen]);
+
+  // Escape closes, as an `aria-modal` dialog has to.
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [isOpen, onClose]);
+
+  // The page must not scroll under the curtain. Lenis owns the wheel, so stopping it is what holds the page still;
+  // the backdrop's own `touch-action-none` covers touch, which Lenis is not driving (`syncTouch: false`).
+  useEffect(() => {
+    if (!lenis || !isOpen) return;
+    lenis.stop();
+    return () => lenis.start();
+  }, [lenis, isOpen]);
+
+  // `aria-modal` claims focus is inside; move it there and give it back on close. Not a full trap — Tab can still
+  // reach the bar behind, which the backdrop covers.
+  useEffect(() => {
+    if (!isOpen) {
+      returnFocusRef.current?.focus();
+      returnFocusRef.current = null;
+      return;
+    }
+    returnFocusRef.current = document.activeElement as HTMLElement | null;
+    panelRef.current?.focus();
+  }, [isOpen, mounted]);
 
   useGSAP(
     () => {
@@ -120,7 +154,9 @@ export const NavMenu = ({ children, className, isOpen }: NavMenuProps) => {
         onComplete: () => setMounted(false),
       });
     },
-    { dependencies: [isOpen] },
+    // `mounted` belongs here too: the panel only exists from the render after `isOpen` turns true, so keyed on
+    // `isOpen` alone this fired once against refs that were still null and the curtain stayed clipped shut.
+    { dependencies: [isOpen, mounted] },
   );
 
   if (!mounted) return null;
@@ -130,14 +166,16 @@ export const NavMenu = ({ children, className, isOpen }: NavMenuProps) => {
       <div
         ref={backdropRef}
         aria-hidden="true"
+        onClick={onClose}
         style={{ opacity: 0 }}
-        className="fixed inset-0 z-40 bg-bg-primary/60 backdrop-blur-sm"
+        className="fixed inset-0 z-40 touch-none bg-bg-primary/60 backdrop-blur-sm"
       />
       <div
         ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-label="Site navigation"
+        tabIndex={-1}
         style={{ clipPath: "inset(0 0 100% 0)" }}
         className={cn(
           // Full-viewport curtain on mobile; on desktop it narrows to a 550px panel anchored to the right edge.
