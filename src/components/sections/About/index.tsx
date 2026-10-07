@@ -17,7 +17,7 @@ export function About() {
               [About me]{" "}
             </span>
             <span className="font-display text-[26px] leading-[1.1] text-primary md:text-[32px] 2xl:text-[52px] lg:leading-none">
-              I am a UI/UX Designer with 4 years of experience{" "}
+              I am a UI/UX Designer with 5 years of experience{" "}
               <span className="text-primary/50">
                 blending strategic UX thinking with sharp visual artistry
               </span>

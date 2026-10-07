@@ -27,7 +27,7 @@ export const experience: readonly ExperienceItem[] = [
   {
     company: "Global Liaison",
     role: "UI/UX Designer",
-    period: "1/2022 - 3/2023",
+    period: "1/2021 - 3/2023",
     image: "/images/about-experience-global-liaison.webp",
     description:
       "Website design, landing page mainly focuses on beauty and nail salons for customers in the US. Utilized WordPress and Shopify to optimize SEO and page load speed, meeting international technical standards.",
